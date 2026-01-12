@@ -1,0 +1,1842 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: ""
+    version: 0.0.1
+paths:
+    /api/v1/applications:
+        post:
+            tags:
+                - JobApplication
+            description: Apply for a job
+            operationId: JobApplication_ApplyJob
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.application.v1.ApplyJobRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.application.v1.JobApplicationReply'
+    /api/v1/applications/{id}:
+        get:
+            tags:
+                - JobApplication
+            description: Get application detail
+            operationId: JobApplication_GetApplication
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.application.v1.JobApplicationDetailReply'
+        delete:
+            tags:
+                - JobApplication
+            description: Withdraw application (for user)
+            operationId: JobApplication_WithdrawApplication
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.application.v1.WithdrawApplicationReply'
+    /api/v1/applications/{id}/status:
+        put:
+            tags:
+                - JobApplication
+            description: Update application status (for HR)
+            operationId: JobApplication_UpdateApplicationStatus
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.application.v1.UpdateApplicationStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.application.v1.JobApplicationReply'
+    /api/v1/auth/change-password:
+        post:
+            tags:
+                - Auth
+            operationId: Auth_ChangePassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.auth.v1.ChangePasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.auth.v1.ChangePasswordReply'
+    /api/v1/auth/login:
+        post:
+            tags:
+                - Auth
+            operationId: Auth_Login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.auth.v1.LoginRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.auth.v1.AuthReply'
+    /api/v1/auth/logout:
+        post:
+            tags:
+                - Auth
+            operationId: Auth_Logout
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.auth.v1.LogoutRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.auth.v1.LogoutReply'
+    /api/v1/auth/profile:
+        get:
+            tags:
+                - Auth
+            operationId: Auth_GetProfile
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.auth.v1.GetProfileReply'
+        put:
+            tags:
+                - Auth
+            operationId: Auth_UpdateProfile
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.auth.v1.UpdateProfileRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.auth.v1.UpdateProfileReply'
+    /api/v1/auth/refresh:
+        post:
+            tags:
+                - Auth
+            operationId: Auth_RefreshToken
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.auth.v1.RefreshTokenRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.auth.v1.RefreshTokenReply'
+    /api/v1/auth/register:
+        post:
+            tags:
+                - Auth
+            operationId: Auth_Register
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.auth.v1.RegisterRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.auth.v1.AuthReply'
+    /api/v1/companies:
+        get:
+            tags:
+                - Company
+            description: List all companies with pagination
+            operationId: Company_ListCompanies
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: industry
+                  in: query
+                  schema:
+                    type: string
+                - name: location
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.ListCompaniesReply'
+        post:
+            tags:
+                - Company
+            description: Create a new company
+            operationId: Company_CreateCompany
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.job.v1.CreateCompanyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.CompanyReply'
+    /api/v1/companies/{id}:
+        get:
+            tags:
+                - Company
+            description: Get a single company by ID
+            operationId: Company_GetCompany
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.CompanyReply'
+        put:
+            tags:
+                - Company
+            description: Update an existing company
+            operationId: Company_UpdateCompany
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.job.v1.UpdateCompanyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.CompanyReply'
+        delete:
+            tags:
+                - Company
+            description: Delete a company
+            operationId: Company_DeleteCompany
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.DeleteCompanyReply'
+    /api/v1/jobs:
+        get:
+            tags:
+                - JobPosting
+            description: List all job postings with pagination and filters
+            operationId: JobPosting_ListJobPostings
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: companyId
+                  in: query
+                  schema:
+                    type: string
+                - name: location
+                  in: query
+                  schema:
+                    type: string
+                - name: jobType
+                  in: query
+                  schema:
+                    type: string
+                - name: level
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: jobTech
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: includeInactive
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.ListJobPostingsReply'
+        post:
+            tags:
+                - JobPosting
+            description: Create a new job posting
+            operationId: JobPosting_CreateJobPosting
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.job.v1.CreateJobPostingRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.JobPostingReply'
+    /api/v1/jobs/{id}:
+        get:
+            tags:
+                - JobPosting
+            description: Get a single job posting by ID
+            operationId: JobPosting_GetJobPosting
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.JobPostingReply'
+        put:
+            tags:
+                - JobPosting
+            description: Update an existing job posting
+            operationId: JobPosting_UpdateJobPosting
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.job.v1.UpdateJobPostingRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.JobPostingReply'
+        delete:
+            tags:
+                - JobPosting
+            description: Delete a job posting
+            operationId: JobPosting_DeleteJobPosting
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.DeleteJobPostingReply'
+    /api/v1/jobs/{jobId}/applications:
+        get:
+            tags:
+                - JobApplication
+            description: List applications for a job posting (for HR)
+            operationId: JobApplication_ListJobApplications
+            parameters:
+                - name: jobId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: status
+                  in: query
+                  description: Optional filter by status
+                  schema:
+                    type: integer
+                    format: enum
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.application.v1.ListApplicationsReply'
+    /api/v1/my-created-jobs:
+        get:
+            tags:
+                - JobPosting
+            description: List jobs created by current user (from token)
+            operationId: JobPosting_GetMyCreatedJobs
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: includeInactive
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.ListJobPostingsReply'
+    /api/v1/my-jobs:
+        get:
+            tags:
+                - JobPosting
+            description: List jobs created by current user/company (for HR)
+            operationId: JobPosting_ListMyJobs
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: companyId
+                  in: query
+                  schema:
+                    type: string
+                - name: includeInactive
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.job.v1.ListJobPostingsReply'
+    /api/v1/notifications:
+        get:
+            tags:
+                - Notification
+            description: Get user notifications with pagination
+            operationId: Notification_GetNotifications
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.notification.v1.GetNotificationsReply'
+    /api/v1/notifications/read-all:
+        put:
+            tags:
+                - Notification
+            description: Mark all notifications as read
+            operationId: Notification_MarkAllAsRead
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.notification.v1.MarkAllAsReadReply'
+    /api/v1/notifications/unread-count:
+        get:
+            tags:
+                - Notification
+            description: Get unread notification count
+            operationId: Notification_GetUnreadCount
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.notification.v1.GetUnreadCountReply'
+    /api/v1/notifications/{notificationId}/read:
+        put:
+            tags:
+                - Notification
+            description: Mark a notification as read
+            operationId: Notification_MarkAsRead
+            parameters:
+                - name: notificationId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.notification.v1.MarkAsReadReply'
+    /api/v1/resumes:
+        get:
+            tags:
+                - Resume
+            description: List all resumes for the authenticated user
+            operationId: Resume_ListResumes
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.resume.v1.ListResumesReply'
+        post:
+            tags:
+                - Resume
+            description: Create a new resume
+            operationId: Resume_CreateResume
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.resume.v1.CreateResumeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.resume.v1.ResumeReply'
+    /api/v1/resumes/generate-description:
+        post:
+            tags:
+                - Resume
+            description: Generate CV description using ChatGPT
+            operationId: Resume_GenerateCVDescription
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.resume.v1.GenerateCVDescriptionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.resume.v1.GenerateCVDescriptionReply'
+    /api/v1/resumes/{id}:
+        get:
+            tags:
+                - Resume
+            description: Get a resume by ID
+            operationId: Resume_GetResume
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.resume.v1.ResumeReply'
+        put:
+            tags:
+                - Resume
+            description: Update an existing resume
+            operationId: Resume_UpdateResume
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.resume.v1.UpdateResumeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.resume.v1.ResumeReply'
+        delete:
+            tags:
+                - Resume
+            description: Delete a resume
+            operationId: Resume_DeleteResume
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.resume.v1.DeleteResumeReply'
+    /api/v1/resumes/{resumeId}/cv-edits/{editId}/status:
+        put:
+            tags:
+                - Resume
+            description: Update CV edit status
+            operationId: Resume_UpdateCVEditStatus
+            parameters:
+                - name: resumeId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: editId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.resume.v1.UpdateCVEditStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.resume.v1.UpdateCVEditStatusReply'
+    /api/v1/users/applications:
+        get:
+            tags:
+                - JobApplication
+            description: List applications for a user
+            operationId: JobApplication_ListUserApplications
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.application.v1.ListApplicationsReply'
+    /api/v1/users/saved-jobs:
+        get:
+            tags:
+                - User
+            description: Get all saved jobs
+            operationId: User_GetSavedJobs
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.GetSavedJobsReply'
+        post:
+            tags:
+                - User
+            description: Save a job
+            operationId: User_SaveJob
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.user.v1.SaveJobRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.SaveJobReply'
+    /api/v1/users/saved-jobs/{jobId}:
+        delete:
+            tags:
+                - User
+            description: Unsave a job
+            operationId: User_UnsaveJob
+            parameters:
+                - name: jobId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.UnsaveJobReply'
+    /api/v1/users/tracking/jd_tos:
+        post:
+            tags:
+                - User
+            operationId: User_CreateTrackingJDTOS
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/api.user.v1.CreateTrackingJDTOSRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/api.user.v1.CreateTrackingJDTOSReply'
+components:
+    schemas:
+        api.application.v1.ApplyJobRequest:
+            type: object
+            properties:
+                jobId:
+                    type: string
+                resumeId:
+                    type: string
+        api.application.v1.Education:
+            type: object
+            properties:
+                degree:
+                    type: string
+                institution:
+                    type: string
+                graduationYear:
+                    type: string
+                description:
+                    type: string
+        api.application.v1.Experience:
+            type: object
+            properties:
+                title:
+                    type: string
+                company:
+                    type: string
+                duration:
+                    type: string
+                responsibilities:
+                    type: array
+                    items:
+                        type: string
+                achievements:
+                    type: array
+                    items:
+                        type: string
+                description:
+                    type: string
+        api.application.v1.JobApplicationDetail:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                resumeId:
+                    type: string
+                jobId:
+                    type: string
+                applicantName:
+                    type: string
+                university:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                appliedAt:
+                    type: string
+                updatedAt:
+                    type: string
+                hrNote:
+                    type: string
+                resumeDetail:
+                    allOf:
+                        - $ref: '#/components/schemas/api.application.v1.ResumeDetail'
+                    description: Full resume detail
+                jobInfo:
+                    allOf:
+                        - $ref: '#/components/schemas/api.application.v1.JobInfo'
+                    description: Job info
+            description: Full application detail (with resume detail)
+        api.application.v1.JobApplicationDetailReply:
+            type: object
+            properties:
+                application:
+                    $ref: '#/components/schemas/api.application.v1.JobApplicationDetail'
+        api.application.v1.JobApplicationInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                resumeId:
+                    type: string
+                jobId:
+                    type: string
+                applicantName:
+                    type: string
+                university:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                appliedAt:
+                    type: string
+                updatedAt:
+                    type: string
+                hrNote:
+                    type: string
+                jobInfo:
+                    allOf:
+                        - $ref: '#/components/schemas/api.application.v1.JobInfo'
+                    description: Job info
+            description: Basic application info (without full resume detail)
+        api.application.v1.JobApplicationReply:
+            type: object
+            properties:
+                application:
+                    $ref: '#/components/schemas/api.application.v1.JobApplicationInfo'
+        api.application.v1.JobInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                companyName:
+                    type: string
+                location:
+                    type: string
+        api.application.v1.ListApplicationsReply:
+            type: object
+            properties:
+                applications:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.application.v1.JobApplicationInfo'
+                total:
+                    type: integer
+                    format: int32
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        api.application.v1.Project:
+            type: object
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                technologies:
+                    type: array
+                    items:
+                        type: string
+                url:
+                    type: string
+                duration:
+                    type: string
+                role:
+                    type: string
+                achievements:
+                    type: array
+                    items:
+                        type: string
+        api.application.v1.ResumeDetail:
+            type: object
+            properties:
+                name:
+                    type: string
+                email:
+                    type: string
+                phone:
+                    type: string
+                summary:
+                    type: string
+                skills:
+                    type: array
+                    items:
+                        type: string
+                education:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.application.v1.Education'
+                experience:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.application.v1.Experience'
+                projects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.application.v1.Project'
+                certifications:
+                    type: array
+                    items:
+                        type: string
+                languages:
+                    type: array
+                    items:
+                        type: string
+        api.application.v1.UpdateApplicationStatusRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                status:
+                    type: integer
+                    format: enum
+                hrNote:
+                    type: string
+        api.application.v1.WithdrawApplicationReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                message:
+                    type: string
+        api.auth.v1.AuthReply:
+            type: object
+            properties:
+                accessToken:
+                    type: string
+                refreshToken:
+                    type: string
+                user:
+                    $ref: '#/components/schemas/api.auth.v1.AuthReply_User'
+        api.auth.v1.AuthReply_User:
+            type: object
+            properties:
+                fullName:
+                    type: string
+                email:
+                    type: string
+                phoneNumber:
+                    type: string
+                role:
+                    type: string
+                companyId:
+                    type: string
+        api.auth.v1.ChangePasswordReply:
+            type: object
+            properties:
+                message:
+                    type: string
+        api.auth.v1.ChangePasswordRequest:
+            type: object
+            properties:
+                oldPassword:
+                    type: string
+                newPassword:
+                    type: string
+        api.auth.v1.GetProfileReply:
+            type: object
+            properties:
+                fullName:
+                    type: string
+                email:
+                    type: string
+                phoneNumber:
+                    type: string
+                role:
+                    type: string
+        api.auth.v1.LoginRequest:
+            type: object
+            properties:
+                email:
+                    type: string
+                password:
+                    type: string
+        api.auth.v1.LogoutReply:
+            type: object
+            properties:
+                message:
+                    type: string
+        api.auth.v1.LogoutRequest:
+            type: object
+            properties:
+                refreshToken:
+                    type: string
+        api.auth.v1.RefreshTokenReply:
+            type: object
+            properties:
+                accessToken:
+                    type: string
+        api.auth.v1.RefreshTokenRequest:
+            type: object
+            properties:
+                refreshToken:
+                    type: string
+        api.auth.v1.RegisterRequest:
+            type: object
+            properties:
+                fullName:
+                    type: string
+                email:
+                    type: string
+                password:
+                    type: string
+                phoneNumber:
+                    type: string
+                role:
+                    type: string
+                companyId:
+                    type: string
+        api.auth.v1.UpdateProfileReply:
+            type: object
+            properties:
+                fullName:
+                    type: string
+                email:
+                    type: string
+                phoneNumber:
+                    type: string
+                role:
+                    type: string
+        api.auth.v1.UpdateProfileRequest:
+            type: object
+            properties:
+                fullName:
+                    type: string
+                phoneNumber:
+                    type: string
+        api.job.v1.CompanyInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                website:
+                    type: string
+                logoUrl:
+                    type: string
+                industry:
+                    type: string
+                companySize:
+                    type: string
+                location:
+                    type: string
+                foundedYear:
+                    type: string
+        api.job.v1.CompanyReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                website:
+                    type: string
+                logoUrl:
+                    type: string
+                industry:
+                    type: string
+                companySize:
+                    type: string
+                location:
+                    type: string
+                foundedYear:
+                    type: string
+        api.job.v1.CreateCompanyRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                website:
+                    type: string
+                logoUrl:
+                    type: string
+                industry:
+                    type: string
+                companySize:
+                    type: string
+                location:
+                    type: string
+                foundedYear:
+                    type: string
+        api.job.v1.CreateJobPostingRequest:
+            type: object
+            properties:
+                companyId:
+                    type: string
+                title:
+                    type: string
+                level:
+                    type: string
+                jobType:
+                    type: string
+                salaryMin:
+                    type: number
+                    format: double
+                salaryMax:
+                    type: number
+                    format: double
+                salaryCurrency:
+                    type: string
+                location:
+                    type: string
+                postedAt:
+                    type: string
+                experienceRequirement:
+                    type: string
+                description:
+                    type: string
+                responsibilities:
+                    type: string
+                requirements:
+                    type: string
+                benefits:
+                    type: string
+                jobTech:
+                    type: array
+                    items:
+                        type: string
+                active:
+                    type: boolean
+        api.job.v1.DeleteCompanyReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.job.v1.DeleteJobPostingReply:
+            type: object
+            properties:
+                message:
+                    type: string
+        api.job.v1.JobPostingReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                companyId:
+                    type: string
+                company:
+                    $ref: '#/components/schemas/api.job.v1.CompanyInfo'
+                title:
+                    type: string
+                level:
+                    type: string
+                jobType:
+                    type: string
+                salaryMin:
+                    type: number
+                    format: double
+                salaryMax:
+                    type: number
+                    format: double
+                salaryCurrency:
+                    type: string
+                location:
+                    type: string
+                postedAt:
+                    type: string
+                experienceRequirement:
+                    type: string
+                description:
+                    type: string
+                responsibilities:
+                    type: string
+                requirements:
+                    type: string
+                benefits:
+                    type: string
+                jobTech:
+                    type: array
+                    items:
+                        type: string
+                active:
+                    type: boolean
+                createdBy:
+                    type: string
+                createdAt:
+                    type: string
+        api.job.v1.ListCompaniesReply:
+            type: object
+            properties:
+                companies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.job.v1.CompanyReply'
+                total:
+                    type: integer
+                    format: int32
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        api.job.v1.ListJobPostingsReply:
+            type: object
+            properties:
+                jobs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.job.v1.JobPostingReply'
+                total:
+                    type: integer
+                    format: int32
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        api.job.v1.UpdateCompanyRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                website:
+                    type: string
+                logoUrl:
+                    type: string
+                industry:
+                    type: string
+                companySize:
+                    type: string
+                location:
+                    type: string
+                foundedYear:
+                    type: string
+        api.job.v1.UpdateJobPostingRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                level:
+                    type: string
+                jobType:
+                    type: string
+                salaryMin:
+                    type: number
+                    format: double
+                salaryMax:
+                    type: number
+                    format: double
+                salaryCurrency:
+                    type: string
+                location:
+                    type: string
+                postedAt:
+                    type: string
+                experienceRequirement:
+                    type: string
+                description:
+                    type: string
+                responsibilities:
+                    type: string
+                requirements:
+                    type: string
+                benefits:
+                    type: string
+                jobTech:
+                    type: array
+                    items:
+                        type: string
+                active:
+                    type: boolean
+        api.notification.v1.GetNotificationsReply:
+            type: object
+            properties:
+                notifications:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.notification.v1.NotificationItem'
+                total:
+                    type: integer
+                    format: int32
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        api.notification.v1.GetUnreadCountReply:
+            type: object
+            properties:
+                count:
+                    type: integer
+                    format: int32
+        api.notification.v1.MarkAllAsReadReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.notification.v1.MarkAsReadReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        api.notification.v1.NotificationItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+                type:
+                    type: string
+                objectId:
+                    type: string
+                isRead:
+                    type: boolean
+                createdAt:
+                    type: string
+            description: Notification message
+        api.resume.v1.CreateResumeRequest:
+            type: object
+            properties:
+                resumeDetail:
+                    $ref: '#/components/schemas/api.resume.v1.ResumeDetail'
+            description: Request/Response messages
+        api.resume.v1.DeleteResumeReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                message:
+                    type: string
+        api.resume.v1.Education:
+            type: object
+            properties:
+                degree:
+                    type: string
+                institution:
+                    type: string
+                graduationYear:
+                    type: string
+                description:
+                    type: string
+        api.resume.v1.Experience:
+            type: object
+            properties:
+                title:
+                    type: string
+                company:
+                    type: string
+                duration:
+                    type: string
+                description:
+                    type: string
+                responsibilities:
+                    type: array
+                    items:
+                        type: string
+                achievements:
+                    type: array
+                    items:
+                        type: string
+        api.resume.v1.GenerateCVDescriptionReply:
+            type: object
+            properties:
+                content:
+                    type: string
+        api.resume.v1.GenerateCVDescriptionRequest:
+            type: object
+            properties:
+                resumeDetail:
+                    $ref: '#/components/schemas/api.resume.v1.ResumeDetail'
+                fieldTag:
+                    type: string
+                currentInput:
+                    type: string
+        api.resume.v1.ListResumesReply:
+            type: object
+            properties:
+                resumes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.resume.v1.ResumeReply'
+                total:
+                    type: integer
+                    format: int32
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        api.resume.v1.Project:
+            type: object
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                technologies:
+                    type: array
+                    items:
+                        type: string
+                url:
+                    type: string
+                duration:
+                    type: string
+                role:
+                    type: string
+                achievements:
+                    type: array
+                    items:
+                        type: string
+        api.resume.v1.ResumeCVEdit:
+            type: object
+            properties:
+                fieldPath:
+                    type: string
+                action:
+                    type: string
+                currentValue:
+                    type: string
+                suggestedValue:
+                    type: string
+                reason:
+                    type: string
+                priority:
+                    type: string
+                impactScore:
+                    type: number
+                    format: double
+                status:
+                    type: string
+                id:
+                    type: string
+        api.resume.v1.ResumeDetail:
+            type: object
+            properties:
+                name:
+                    type: string
+                email:
+                    type: string
+                phone:
+                    type: string
+                summary:
+                    type: string
+                skills:
+                    type: array
+                    items:
+                        type: string
+                education:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.resume.v1.Education'
+                experience:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.resume.v1.Experience'
+                projects:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.resume.v1.Project'
+                certifications:
+                    type: array
+                    items:
+                        type: string
+                languages:
+                    type: array
+                    items:
+                        type: string
+                achievements:
+                    type: array
+                    items:
+                        type: string
+                evaluations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.resume.v1.ResumeEvaluation'
+        api.resume.v1.ResumeEvaluation:
+            type: object
+            properties:
+                cvName:
+                    type: string
+                overallScore:
+                    type: number
+                    format: double
+                grade:
+                    type: string
+                scoreBreakdown:
+                    $ref: '#/components/schemas/api.resume.v1.ResumeScoreBreakdown'
+                strengths:
+                    type: array
+                    items:
+                        type: string
+                weaknesses:
+                    type: array
+                    items:
+                        type: string
+                recommendations:
+                    type: array
+                    items:
+                        type: string
+                cvEdits:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.resume.v1.ResumeCVEdit'
+                jobsAnalyzed:
+                    type: integer
+                    format: int32
+                evaluatedAt:
+                    type: string
+        api.resume.v1.ResumeReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                resumeDetail:
+                    $ref: '#/components/schemas/api.resume.v1.ResumeDetail'
+                version:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+            description: Resume messages
+        api.resume.v1.ResumeScoreBreakdown:
+            type: object
+            properties:
+                skillsScore:
+                    type: number
+                    format: double
+                experienceScore:
+                    type: number
+                    format: double
+                educationScore:
+                    type: number
+                    format: double
+                completenessScore:
+                    type: number
+                    format: double
+                jobAlignmentScore:
+                    type: number
+                    format: double
+                presentationScore:
+                    type: number
+                    format: double
+        api.resume.v1.UpdateCVEditStatusReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                message:
+                    type: string
+        api.resume.v1.UpdateCVEditStatusRequest:
+            type: object
+            properties:
+                resumeId:
+                    type: string
+                editId:
+                    type: string
+                status:
+                    type: string
+        api.resume.v1.UpdateResumeRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                resumeDetail:
+                    $ref: '#/components/schemas/api.resume.v1.ResumeDetail'
+        api.user.v1.CreateTrackingJDTOSReply:
+            type: object
+            properties: {}
+        api.user.v1.CreateTrackingJDTOSRequest:
+            type: object
+            properties:
+                jobId:
+                    type: string
+                timeOnSight:
+                    type: integer
+                    format: int32
+        api.user.v1.GetSavedJobsReply:
+            type: object
+            properties:
+                jobs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/api.user.v1.JobPosting'
+                total:
+                    type: integer
+                    format: int32
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        api.user.v1.JobPosting:
+            type: object
+            properties:
+                id:
+                    type: string
+                companyId:
+                    type: string
+                title:
+                    type: string
+                level:
+                    type: string
+                jobType:
+                    type: string
+                salaryMin:
+                    type: number
+                    format: double
+                salaryMax:
+                    type: number
+                    format: double
+                salaryCurrency:
+                    type: string
+                location:
+                    type: string
+                postedAt:
+                    type: string
+                experienceRequirement:
+                    type: string
+                description:
+                    type: string
+                responsibilities:
+                    type: string
+                requirements:
+                    type: string
+                benefits:
+                    type: string
+                jobTech:
+                    type: array
+                    items:
+                        type: string
+                createdAt:
+                    type: string
+            description: JobPosting message (same structure as in job.proto)
+        api.user.v1.SaveJobReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                message:
+                    type: string
+        api.user.v1.SaveJobRequest:
+            type: object
+            properties:
+                jobId:
+                    type: string
+        api.user.v1.UnsaveJobReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+                message:
+                    type: string
+tags:
+    - name: Auth
+    - name: Company
+      description: Company Service
+    - name: JobApplication
+      description: Job Application Service
+    - name: JobPosting
+      description: Job Posting Service
+    - name: Notification
+    - name: Resume
+    - name: User

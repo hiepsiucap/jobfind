@@ -1,0 +1,204 @@
+syntax = "proto3";
+
+package api.resume.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "JobblyBE/api/resume/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.resume.v1";
+
+service Resume {
+	// Create a new resume
+	rpc CreateResume (CreateResumeRequest) returns (ResumeReply) {
+		option (google.api.http) = {
+			post: "/api/v1/resumes"
+			body: "*"
+		};
+	}
+	
+	// Update an existing resume
+	rpc UpdateResume (UpdateResumeRequest) returns (ResumeReply) {
+		option (google.api.http) = {
+			put: "/api/v1/resumes/{id}"
+			body: "*"
+		};
+	}
+	
+	// Get a resume by ID
+	rpc GetResume (GetResumeRequest) returns (ResumeReply) {
+		option (google.api.http) = {
+			get: "/api/v1/resumes/{id}"
+		};
+	}
+	
+	// List all resumes for the authenticated user
+	rpc ListResumes (ListResumesRequest) returns (ListResumesReply) {
+		option (google.api.http) = {
+			get: "/api/v1/resumes"
+		};
+	}
+	
+	// Delete a resume
+	rpc DeleteResume (DeleteResumeRequest) returns (DeleteResumeReply) {
+		option (google.api.http) = {
+			delete: "/api/v1/resumes/{id}"
+		};
+	}
+	
+	// Generate CV description using ChatGPT
+	rpc GenerateCVDescription (GenerateCVDescriptionRequest) returns (GenerateCVDescriptionReply) {
+		option (google.api.http) = {
+			post: "/api/v1/resumes/generate-description"
+			body:"*"
+		};
+	}
+	
+	// Update CV edit status
+	rpc UpdateCVEditStatus (UpdateCVEditStatusRequest) returns (UpdateCVEditStatusReply) {
+		option (google.api.http) = {
+			put: "/api/v1/resumes/{resume_id}/cv-edits/{edit_id}/status"
+			body: "*"
+		};
+	}
+}
+// Resume messages
+message ResumeReply {
+	string id = 1;
+	string user_id = 2;
+	ResumeDetail resume_detail = 3;
+	int32 version = 4;
+	string created_at = 5;
+}
+
+message ResumeDetail {
+	string name = 1;
+	string email = 2;
+	string phone = 3;
+	string summary = 4;
+	repeated string skills = 5;
+	repeated Education education = 6;
+	repeated Experience experience = 7;
+	repeated Project projects = 8;
+	repeated string certifications = 9;
+	repeated string languages = 10;
+	repeated string achievements = 11;
+	repeated ResumeEvaluation evaluations = 12;
+}
+
+message Education {
+	string degree = 1;
+	string institution = 2;
+	string graduation_year = 3;
+	string description = 4;
+}
+
+message Experience {
+	string title = 1;
+	string company = 2;
+	string duration = 3;
+	string description = 4;
+	repeated string responsibilities = 5;
+	repeated string achievements = 6;
+}
+
+message Project {
+	string name = 1;
+	string description = 2;
+	repeated string technologies = 3;
+	string url = 4;
+	string duration = 5;
+	string role = 6;
+	repeated string achievements = 7;
+}
+
+message ResumeScoreBreakdown {
+	double skills_score = 1;
+	double experience_score = 2;
+	double education_score = 3;
+	double completeness_score = 4;
+	double job_alignment_score = 5;
+	double presentation_score = 6;
+}
+
+message ResumeCVEdit {
+	string field_path = 1;
+	string action = 2;
+	string current_value = 3;
+	string suggested_value = 4;
+	string reason = 5;
+	string priority = 6;
+	double impact_score = 7;
+	string status = 8; // null/empty: new, "rejected": user rejected, "accepted": user accepted
+	string id = 9; // unique identifier for the edit
+}
+
+message ResumeEvaluation {
+	string cv_name = 1;
+	double overall_score = 2;
+	string grade = 3;
+	ResumeScoreBreakdown score_breakdown = 4;
+	repeated string strengths = 5;
+	repeated string weaknesses = 6;
+	repeated string recommendations = 7;
+	repeated ResumeCVEdit cv_edits = 8;
+	int32 jobs_analyzed = 9;
+	string evaluated_at = 10;
+}
+
+// Request/Response messages
+message CreateResumeRequest {
+	ResumeDetail resume_detail = 1;
+}
+
+message UpdateResumeRequest {
+	string id = 1;
+	ResumeDetail resume_detail = 2;
+}
+
+message GetResumeRequest {
+	string id = 1;
+}
+
+message ListResumesRequest {
+	int32 page = 1;
+	int32 page_size = 2;
+}
+
+message ListResumesReply {
+	repeated ResumeReply resumes = 1;
+	int32 total = 2;
+	int32 page = 3;
+	int32 page_size = 4;
+}
+
+message DeleteResumeRequest {
+	string id = 1;
+}
+
+message DeleteResumeReply {
+	bool success = 1;
+	string message = 2;
+}
+
+message GenerateCVDescriptionRequest {
+	ResumeDetail resume_detail = 1;
+	string field_tag = 2;
+	string current_input = 3;
+}
+
+message GenerateCVDescriptionReply {
+	string content = 1;
+}
+
+message UpdateCVEditStatusRequest {
+	string resume_id = 1;
+	string edit_id = 2;
+	string status = 3; // "accepted" or "rejected"
+}
+
+message UpdateCVEditStatusReply {
+	bool success = 1;
+	string message = 2;
+}
+
