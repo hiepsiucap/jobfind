@@ -1258,35 +1258,72 @@ export function getWebSocketURL(token: string): string {
  * Get jobs for evaluation (viewed + saved jobs)
  */
 export async function getJobsForEvaluation(token: string): Promise<{
-  viewed_jobs: Array<{
+  // Support both snake_case and camelCase from backend
+  viewed_jobs?: Array<{
     id: string;
     title: string;
-    company_name: string;
+    company_name?: string;
+    companyName?: string;
     location: string;
-    time_on_sight: number;
+    time_on_sight?: number;
+    timeOnSight?: number;
   }>;
-  saved_jobs: Array<{
+  viewedJobs?: Array<{
     id: string;
     title: string;
-    company_name: string;
+    company_name?: string;
+    companyName?: string;
     location: string;
-    time_on_sight: number;
+    time_on_sight?: number;
+    timeOnSight?: number;
+  }>;
+  saved_jobs?: Array<{
+    id: string;
+    title: string;
+    company_name?: string;
+    companyName?: string;
+    location: string;
+    time_on_sight?: number;
+    timeOnSight?: number;
+  }>;
+  savedJobs?: Array<{
+    id: string;
+    title: string;
+    company_name?: string;
+    companyName?: string;
+    location: string;
+    time_on_sight?: number;
+    timeOnSight?: number;
   }>;
 }> {
   try {
+    console.log('[API] Getting jobs for evaluation:', { url: `${API_BASE_URL}/api/v1/evaluation/jobs` });
+    
     const response = await fetch(`${API_BASE_URL}/api/v1/evaluation/jobs`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
 
+    console.log('[API] Get jobs response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[API] Get jobs error:', errorText);
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText };
+      }
+      throw new Error(errorData.message || `Lỗi ${response.status}: Không thể tải danh sách công việc`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    console.log('[API] Get jobs success:', result);
+    return result;
   } catch (error) {
-    console.error('Error fetching jobs for evaluation:', error);
+    console.error('[API] Error fetching jobs for evaluation:', error);
     throw error;
   }
 }

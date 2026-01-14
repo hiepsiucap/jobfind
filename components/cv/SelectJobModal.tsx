@@ -7,9 +7,11 @@ import { getJobsForEvaluation } from '@/lib/api';
 interface JobForEvaluation {
   id: string;
   title: string;
-  company_name: string;
+  company_name?: string;
+  companyName?: string;
   location: string;
-  time_on_sight: number;
+  time_on_sight?: number;
+  timeOnSight?: number;
 }
 
 interface SelectJobModalProps {
@@ -34,17 +36,25 @@ export default function SelectJobModal({ isOpen, onClose, onSelect, accessToken 
   }, [isOpen, accessToken]);
 
   const loadJobs = async () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setError('Chưa đăng nhập');
+      setIsLoading(false);
+      return;
+    }
     
     setIsLoading(true);
     setError(null);
     try {
+      console.log('[SelectJobModal] Loading jobs for evaluation...');
       const data = await getJobsForEvaluation(accessToken);
-      setViewedJobs(data.viewed_jobs || []);
-      setSavedJobs(data.saved_jobs || []);
+      console.log('[SelectJobModal] Jobs loaded:', data);
+      // Support both camelCase and snake_case from backend
+      setViewedJobs(data.viewed_jobs || data.viewedJobs || []);
+      setSavedJobs(data.saved_jobs || data.savedJobs || []);
     } catch (err) {
-      console.error('Failed to load jobs:', err);
-      setError('Không thể tải danh sách công việc');
+      console.error('[SelectJobModal] Failed to load jobs:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Không thể tải danh sách công việc';
+      setError(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -52,13 +62,17 @@ export default function SelectJobModal({ isOpen, onClose, onSelect, accessToken 
 
   const currentJobs = activeTab === 'viewed' ? viewedJobs : savedJobs;
   
+  // Helper to get company name (support both naming conventions)
+  const getCompanyName = (job: JobForEvaluation) => job.company_name || job.companyName || '';
+  const getTimeOnSight = (job: JobForEvaluation) => job.time_on_sight || job.timeOnSight || 0;
+
   const filteredJobs = currentJobs.filter(job =>
     job.title.toLowerCase().includes(search.toLowerCase()) ||
-    job.company_name.toLowerCase().includes(search.toLowerCase())
+    getCompanyName(job).toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSelectJob = (job: JobForEvaluation) => {
-    onSelect(job.id, `${job.title} - ${job.company_name}`);
+    onSelect(job.id, `${job.title} - ${getCompanyName(job)}`);
     onClose();
   };
 
@@ -148,10 +162,19 @@ export default function SelectJobModal({ isOpen, onClose, onSelect, accessToken 
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <p className="text-sm text-red-600">{error}</p>
+              <div className="mb-4 text-4xl">⚠️</div>
+              <p className="text-sm text-red-600 font-medium mb-2">{error}</p>
+              <details className="text-xs text-gray-500 mb-3">
+                <summary className="cursor-pointer hover:text-gray-700">Chi tiết kỹ thuật</summary>
+                <div className="mt-2 p-3 bg-gray-100 rounded text-left">
+                  <p>API Endpoint: GET /api/v1/evaluation/jobs</p>
+                  <p>Token: {accessToken ? '✓ Có' : '✗ Không có'}</p>
+                  <p className="mt-1 text-xs opacity-70">Mở Console (F12) để xem chi tiết</p>
+                </div>
+              </details>
               <button
                 onClick={loadJobs}
-                className="mt-3 text-sm text-blue-600 hover:underline"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
               >
                 Thử lại
               </button>
@@ -176,16 +199,16 @@ export default function SelectJobModal({ isOpen, onClose, onSelect, accessToken 
                       <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-1 line-clamp-1">
                         {job.title}
                       </h3>
-                      <p className="text-sm text-gray-600 mb-2">{job.company_name}</p>
+                      <p className="text-sm text-gray-600 mb-2">{getCompanyName(job)}</p>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
                           {job.location}
                         </span>
-                        {activeTab === 'viewed' && job.time_on_sight > 0 && (
+                        {activeTab === 'viewed' && getTimeOnSight(job) > 0 && (
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            Đã xem {Math.floor(job.time_on_sight / 60)}m
+                            Đã xem {Math.floor(getTimeOnSight(job) / 60)}m
                           </span>
                         )}
                       </div>

@@ -1,8 +1,10 @@
-'use client';
+/** @format */
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Briefcase,
   Users,
@@ -26,19 +28,19 @@ import {
   MessageSquare,
   Save,
   Edit3,
-} from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { 
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
   getMyCreatedJobs,
   getJobApplications,
   updateApplicationStatus,
   getApplicationDetail,
   BackendJob,
   JobApplicationInfo,
-} from '@/lib/api';
-import { toast } from 'sonner';
+} from "@/lib/api";
+import { toast } from "sonner";
 
-type ApplicationStatus = 'APPLIED' | 'REVIEWING' | 'ACCEPTED' | 'REJECTED';
+type ApplicationStatus = "APPLIED" | "REVIEWING" | "ACCEPTED" | "REJECTED";
 
 interface JobWithApplicationCount extends BackendJob {
   applicationCount?: number;
@@ -47,22 +49,24 @@ interface JobWithApplicationCount extends BackendJob {
 export default function RecruiterDashboard() {
   const router = useRouter();
   const { isAuthenticated, accessToken, isLoading: authLoading } = useAuth();
-  
+
   const [jobs, setJobs] = useState<JobWithApplicationCount[]>([]);
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
-  const [selectedJob, setSelectedJob] = useState<JobWithApplicationCount | null>(null);
+  const [selectedJob, setSelectedJob] =
+    useState<JobWithApplicationCount | null>(null);
   const [applications, setApplications] = useState<JobApplicationInfo[]>([]);
   const [isLoadingApplications, setIsLoadingApplications] = useState(false);
-  const [selectedApplication, setSelectedApplication] = useState<JobApplicationInfo | null>(null);
+  const [selectedApplication, setSelectedApplication] =
+    useState<JobApplicationInfo | null>(null);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [hrNote, setHrNote] = useState('');
+  const [hrNote, setHrNote] = useState("");
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [isSavingNote, setIsSavingNote] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [authLoading, isAuthenticated, router]);
 
@@ -74,16 +78,16 @@ export default function RecruiterDashboard() {
 
   const loadJobs = async () => {
     if (!accessToken) {
-      console.log('[Recruiter] No access token');
+      console.log("[Recruiter] No access token");
       return;
     }
     setIsLoadingJobs(true);
-    console.log('[Recruiter] Loading my created jobs...');
+    console.log("[Recruiter] Loading my created jobs...");
     try {
       // Use getMyCreatedJobs to get only jobs created by current user
       const data = await getMyCreatedJobs(accessToken, 1, 50, true);
-      console.log('[Recruiter] My jobs fetched:', data.jobs?.length || 0);
-      
+      console.log("[Recruiter] My jobs fetched:", data.jobs?.length || 0);
+
       // Load application count for each job
       const jobsWithCounts = await Promise.all(
         (data.jobs || []).map(async (job) => {
@@ -97,15 +101,15 @@ export default function RecruiterDashboard() {
           }
         })
       );
-      console.log('[Recruiter] Jobs with counts:', jobsWithCounts.length);
+      console.log("[Recruiter] Jobs with counts:", jobsWithCounts.length);
       setJobs(jobsWithCounts);
       if (jobsWithCounts.length > 0) {
         setSelectedJob(jobsWithCounts[0]);
         loadApplications(jobsWithCounts[0].id);
       }
     } catch (err) {
-      console.error('[Recruiter] Failed to load jobs:', err);
-      toast.error('Không thể tải danh sách công việc');
+      console.error("[Recruiter] Failed to load jobs:", err);
+      toast.error("Không thể tải danh sách công việc");
     } finally {
       setIsLoadingJobs(false);
     }
@@ -119,7 +123,7 @@ export default function RecruiterDashboard() {
       const data = await getJobApplications(jobId, accessToken, 1, 100);
       setApplications(data.applications || []);
     } catch (err) {
-      console.error('Failed to load applications:', err);
+      console.error("Failed to load applications:", err);
     } finally {
       setIsLoadingApplications(false);
     }
@@ -138,9 +142,9 @@ export default function RecruiterDashboard() {
     try {
       const detail = await getApplicationDetail(app.id, accessToken);
       setSelectedApplication(detail);
-      setHrNote((detail as any).hrNote || '');
+      setHrNote((detail as any).hrNote || "");
     } catch (err) {
-      console.error('Failed to load detail:', err);
+      console.error("Failed to load detail:", err);
     } finally {
       setIsLoadingDetail(false);
     }
@@ -151,37 +155,40 @@ export default function RecruiterDashboard() {
     setIsSavingNote(true);
     try {
       await updateApplicationStatus(
-        selectedApplication.id, 
-        selectedApplication.status as ApplicationStatus, 
-        hrNote, 
+        selectedApplication.id,
+        selectedApplication.status as ApplicationStatus,
+        hrNote,
         accessToken
       );
       setIsEditingNote(false);
-      toast.success('Đã lưu ghi chú');
+      toast.success("Đã lưu ghi chú");
     } catch (err) {
-      console.error('Failed to save note:', err);
-      toast.error('Không thể lưu ghi chú');
+      console.error("Failed to save note:", err);
+      toast.error("Không thể lưu ghi chú");
     } finally {
       setIsSavingNote(false);
     }
   };
 
-  const handleUpdateStatus = async (appId: string, status: ApplicationStatus) => {
+  const handleUpdateStatus = async (
+    appId: string,
+    status: ApplicationStatus
+  ) => {
     if (!accessToken) return;
     setUpdatingId(appId);
     try {
-      await updateApplicationStatus(appId, status, '', accessToken);
+      await updateApplicationStatus(appId, status, "", accessToken);
       // Update local state
-      setApplications(prev => prev.map(app => 
-        app.id === appId ? { ...app, status } : app
-      ));
+      setApplications((prev) =>
+        prev.map((app) => (app.id === appId ? { ...app, status } : app))
+      );
       if (selectedApplication?.id === appId) {
-        setSelectedApplication(prev => prev ? { ...prev, status } : null);
+        setSelectedApplication((prev) => (prev ? { ...prev, status } : null));
       }
       toast.success(`Đã cập nhật trạng thái: ${getStatusLabel(status)}`);
     } catch (err) {
-      console.error('Failed to update status:', err);
-      toast.error('Không thể cập nhật trạng thái');
+      console.error("Failed to update status:", err);
+      toast.error("Không thể cập nhật trạng thái");
     } finally {
       setUpdatingId(null);
     }
@@ -189,25 +196,41 @@ export default function RecruiterDashboard() {
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      'APPLIED': 'Đã gửi',
-      'REVIEWING': 'Đang xem xét',
-      'ACCEPTED': 'Đã chấp nhận',
-      'REJECTED': 'Đã từ chối',
+      APPLIED: "Đã gửi",
+      REVIEWING: "Đang xem xét",
+      ACCEPTED: "Đã chấp nhận",
+      REJECTED: "Đã từ chối",
     };
     return labels[status] || status;
   };
 
   const getStatusBadge = (status: string) => {
-    const config: Record<string, { className: string; icon: React.ReactNode }> = {
-      'APPLIED': { className: 'bg-blue-100 text-blue-700', icon: <Clock className="h-3 w-3" /> },
-      'REVIEWING': { className: 'bg-yellow-100 text-yellow-700', icon: <Eye className="h-3 w-3" /> },
-      'ACCEPTED': { className: 'bg-green-100 text-green-700', icon: <CheckCircle className="h-3 w-3" /> },
-      'REJECTED': { className: 'bg-red-100 text-red-700', icon: <XCircle className="h-3 w-3" /> },
-    };
-    const c = config[status] || config['APPLIED'];
+    const config: Record<string, { className: string; icon: React.ReactNode }> =
+      {
+        APPLIED: {
+          className: "bg-blue-100 text-blue-700",
+          icon: <Clock className="h-3 w-3" />,
+        },
+        REVIEWING: {
+          className: "bg-yellow-100 text-yellow-700",
+          icon: <Eye className="h-3 w-3" />,
+        },
+        ACCEPTED: {
+          className: "bg-green-100 text-green-700",
+          icon: <CheckCircle className="h-3 w-3" />,
+        },
+        REJECTED: {
+          className: "bg-red-100 text-red-700",
+          icon: <XCircle className="h-3 w-3" />,
+        },
+      };
+    const c = config[status] || config["APPLIED"];
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${c.className}`}>
-        {c.icon}{getStatusLabel(status)}
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${c.className}`}
+      >
+        {c.icon}
+        {getStatusLabel(status)}
       </span>
     );
   };
@@ -232,9 +255,14 @@ export default function RecruiterDashboard() {
               <Briefcase className="h-5 w-5 text-blue-600" />
               <h2 className="font-bold text-gray-900">Tin tuyển dụng</h2>
             </div>
-            <Link href="/post-job" className="text-xs text-blue-600 hover:underline">+ Đăng tin mới</Link>
+            <Link
+              href="/post-job"
+              className="text-xs text-blue-600 hover:underline"
+            >
+              + Đăng tin mới
+            </Link>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto">
             {isLoadingJobs ? (
               <div className="flex justify-center py-8">
@@ -250,14 +278,18 @@ export default function RecruiterDashboard() {
                   <div
                     key={job.id}
                     className={`relative group ${
-                      selectedJob?.id === job.id ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
+                      selectedJob?.id === job.id
+                        ? "bg-blue-50 border-l-2 border-l-blue-600"
+                        : ""
                     }`}
                   >
                     <button
                       onClick={() => handleSelectJob(job)}
                       className="w-full p-3 text-left hover:bg-gray-50 transition-colors"
                     >
-                      <div className="font-medium text-sm text-gray-900 truncate pr-8">{job.title}</div>
+                      <div className="font-medium text-sm text-gray-900 truncate pr-8">
+                        {job.title}
+                      </div>
                       <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
                         <span className="flex items-center gap-1">
                           <Building2 className="h-3 w-3" />
@@ -299,10 +331,12 @@ export default function RecruiterDashboard() {
               )}
             </h3>
             {selectedJob && (
-              <p className="text-xs text-gray-500 mt-1 truncate">{selectedJob.title}</p>
+              <p className="text-xs text-gray-500 mt-1 truncate">
+                {selectedJob.title}
+              </p>
             )}
           </div>
-          
+
           <div className="flex-1 overflow-y-auto">
             {!selectedJob ? (
               <div className="p-4 text-center text-gray-500 text-sm">
@@ -323,21 +357,25 @@ export default function RecruiterDashboard() {
                     key={app.id}
                     onClick={() => handleSelectApplication(app)}
                     className={`w-full p-3 text-left hover:bg-gray-50 transition-colors ${
-                      selectedApplication?.id === app.id ? 'bg-purple-50 border-l-2 border-l-purple-600' : ''
+                      selectedApplication?.id === app.id
+                        ? "bg-purple-50 border-l-2 border-l-purple-600"
+                        : ""
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-sm text-gray-900">{app.applicantName}</span>
+                      <span className="font-medium text-sm text-gray-900">
+                        {app.applicantName}
+                      </span>
                       {getStatusBadge(app.status)}
                     </div>
                     <div className="text-xs text-gray-500 flex items-center gap-2">
                       <span className="flex items-center gap-1">
                         <GraduationCap className="h-3 w-3" />
-                        {app.university || 'N/A'}
+                        {app.university || "N/A"}
                       </span>
                     </div>
                     <div className="text-xs text-gray-400 mt-1">
-                      {new Date(app.appliedAt).toLocaleDateString('vi-VN')}
+                      {new Date(app.appliedAt).toLocaleDateString("vi-VN")}
                     </div>
                   </button>
                 ))}
@@ -365,33 +403,52 @@ export default function RecruiterDashboard() {
               <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900">{selectedApplication.applicantName}</h2>
-                    <p className="text-sm text-gray-500">{selectedApplication.university}</p>
+                    <h2 className="text-lg font-bold text-gray-900">
+                      {selectedApplication.applicantName}
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      {selectedApplication.university}
+                    </p>
                   </div>
                   {getStatusBadge(selectedApplication.status)}
                 </div>
-                
+
                 {/* Quick Actions */}
                 <div className="flex gap-2 mt-4">
                   <button
-                    onClick={() => handleUpdateStatus(selectedApplication.id, 'REVIEWING')}
-                    disabled={updatingId === selectedApplication.id || selectedApplication.status === 'REVIEWING'}
+                    onClick={() =>
+                      handleUpdateStatus(selectedApplication.id, "REVIEWING")
+                    }
+                    disabled={
+                      updatingId === selectedApplication.id ||
+                      selectedApplication.status === "REVIEWING"
+                    }
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-yellow-700 bg-yellow-100 hover:bg-yellow-200 rounded-lg disabled:opacity-50 transition-colors"
                   >
                     <Eye className="h-4 w-4" />
                     Đang xem
                   </button>
                   <button
-                    onClick={() => handleUpdateStatus(selectedApplication.id, 'ACCEPTED')}
-                    disabled={updatingId === selectedApplication.id || selectedApplication.status === 'ACCEPTED'}
+                    onClick={() =>
+                      handleUpdateStatus(selectedApplication.id, "ACCEPTED")
+                    }
+                    disabled={
+                      updatingId === selectedApplication.id ||
+                      selectedApplication.status === "ACCEPTED"
+                    }
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg disabled:opacity-50 transition-colors"
                   >
                     <UserCheck className="h-4 w-4" />
                     Chấp nhận
                   </button>
                   <button
-                    onClick={() => handleUpdateStatus(selectedApplication.id, 'REJECTED')}
-                    disabled={updatingId === selectedApplication.id || selectedApplication.status === 'REJECTED'}
+                    onClick={() =>
+                      handleUpdateStatus(selectedApplication.id, "REJECTED")
+                    }
+                    disabled={
+                      updatingId === selectedApplication.id ||
+                      selectedApplication.status === "REJECTED"
+                    }
                     className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-lg disabled:opacity-50 transition-colors"
                   >
                     <UserX className="h-4 w-4" />
@@ -411,11 +468,15 @@ export default function RecruiterDashboard() {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-gray-400" />
-                        <span>{(selectedApplication as any).resumeDetail.email}</span>
+                        <span>
+                          {(selectedApplication as any).resumeDetail.email}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="h-4 w-4 text-gray-400" />
-                        <span>{(selectedApplication as any).resumeDetail.phone}</span>
+                        <span>
+                          {(selectedApplication as any).resumeDetail.phone}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -423,42 +484,66 @@ export default function RecruiterDashboard() {
                   {/* Summary */}
                   {(selectedApplication as any).resumeDetail.summary && (
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
-                      <h3 className="font-semibold text-gray-900 text-sm mb-2">Giới thiệu</h3>
-                      <p className="text-sm text-gray-600">{(selectedApplication as any).resumeDetail.summary}</p>
+                      <h3 className="font-semibold text-gray-900 text-sm mb-2">
+                        Giới thiệu
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {(selectedApplication as any).resumeDetail.summary}
+                      </p>
                     </div>
                   )}
 
                   {/* Skills */}
-                  {(selectedApplication as any).resumeDetail.skills?.length > 0 && (
+                  {(selectedApplication as any).resumeDetail.skills?.length >
+                    0 && (
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
-                      <h3 className="font-semibold text-gray-900 text-sm mb-2">Kỹ năng</h3>
+                      <h3 className="font-semibold text-gray-900 text-sm mb-2">
+                        Kỹ năng
+                      </h3>
                       <div className="flex flex-wrap gap-1.5">
-                        {(selectedApplication as any).resumeDetail.skills.map((skill: string, i: number) => (
-                          <span key={i} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">
-                            {skill}
-                          </span>
-                        ))}
+                        {(selectedApplication as any).resumeDetail.skills.map(
+                          (skill: string, i: number) => (
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"
+                            >
+                              {skill}
+                            </span>
+                          )
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* Experience */}
-                  {(selectedApplication as any).resumeDetail.experience?.length > 0 && (
+                  {(selectedApplication as any).resumeDetail.experience
+                    ?.length > 0 && (
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
                       <h3 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2">
                         <Briefcase className="h-4 w-4 text-green-600" />
                         Kinh nghiệm làm việc
                       </h3>
                       <div className="space-y-3">
-                        {(selectedApplication as any).resumeDetail.experience.map((exp: any, i: number) => (
-                          <div key={i} className="border-l-2 border-green-200 pl-3">
-                            <div className="font-medium text-sm">{exp.title}</div>
-                            <div className="text-xs text-gray-600">{exp.company} • {exp.duration}</div>
+                        {(
+                          selectedApplication as any
+                        ).resumeDetail.experience.map((exp: any, i: number) => (
+                          <div
+                            key={i}
+                            className="border-l-2 border-green-200 pl-3"
+                          >
+                            <div className="font-medium text-sm">
+                              {exp.title}
+                            </div>
+                            <div className="text-xs text-gray-600">
+                              {exp.company} • {exp.duration}
+                            </div>
                             {exp.responsibilities?.length > 0 && (
                               <ul className="mt-1 text-xs text-gray-500 list-disc list-inside">
-                                {exp.responsibilities.slice(0, 3).map((r: string, j: number) => (
-                                  <li key={j}>{r}</li>
-                                ))}
+                                {exp.responsibilities
+                                  .slice(0, 3)
+                                  .map((r: string, j: number) => (
+                                    <li key={j}>{r}</li>
+                                  ))}
                               </ul>
                             )}
                           </div>
@@ -468,17 +553,25 @@ export default function RecruiterDashboard() {
                   )}
 
                   {/* Education */}
-                  {(selectedApplication as any).resumeDetail.education?.length > 0 && (
+                  {(selectedApplication as any).resumeDetail.education?.length >
+                    0 && (
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
                       <h3 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2">
                         <GraduationCap className="h-4 w-4 text-purple-600" />
                         Học vấn
                       </h3>
                       <div className="space-y-2">
-                        {(selectedApplication as any).resumeDetail.education.map((edu: any, i: number) => (
-                          <div key={i} className="text-sm">
+                        {(
+                          selectedApplication as any
+                        ).resumeDetail.education.map((edu: any, i: number) => (
+                          <div
+                            key={i}
+                            className="text-sm"
+                          >
                             <div className="font-medium">{edu.degree}</div>
-                            <div className="text-xs text-gray-600">{edu.institution} • {edu.graduationYear}</div>
+                            <div className="text-xs text-gray-600">
+                              {edu.institution} • {edu.graduationYear}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -486,69 +579,97 @@ export default function RecruiterDashboard() {
                   )}
 
                   {/* Certifications */}
-                  {(selectedApplication as any).resumeDetail.certifications?.length > 0 && (
+                  {(selectedApplication as any).resumeDetail.certifications
+                    ?.length > 0 && (
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
                       <h3 className="font-semibold text-gray-900 text-sm mb-2 flex items-center gap-2">
                         <Award className="h-4 w-4 text-orange-600" />
                         Chứng chỉ
                       </h3>
                       <div className="flex flex-wrap gap-1.5">
-                        {(selectedApplication as any).resumeDetail.certifications.map((cert: string, i: number) => (
-                          <span key={i} className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs">
-                            {cert}
-                          </span>
-                        ))}
+                        {(
+                          selectedApplication as any
+                        ).resumeDetail.certifications.map(
+                          (cert: string, i: number) => (
+                            <span
+                              key={i}
+                              className="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs"
+                            >
+                              {cert}
+                            </span>
+                          )
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* Projects */}
-                  {(selectedApplication as any).resumeDetail.projects?.length > 0 && (
+                  {(selectedApplication as any).resumeDetail.projects?.length >
+                    0 && (
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-4">
                       <h3 className="font-semibold text-gray-900 text-sm mb-3 flex items-center gap-2">
                         <FolderGit2 className="h-4 w-4 text-cyan-600" />
                         Dự án
                       </h3>
                       <div className="space-y-3">
-                        {(selectedApplication as any).resumeDetail.projects.map((project: any, i: number) => (
-                          <div key={i} className="border-l-2 border-cyan-200 pl-3">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-sm">{project.name}</span>
-                              {project.url && (
-                                <a 
-                                  href={project.url} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:text-blue-800"
-                                >
-                                  <Link2 className="h-3 w-3" />
-                                </a>
+                        {(selectedApplication as any).resumeDetail.projects.map(
+                          (project: any, i: number) => (
+                            <div
+                              key={i}
+                              className="border-l-2 border-cyan-200 pl-3"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">
+                                  {project.name}
+                                </span>
+                                {project.url && (
+                                  <a
+                                    href={project.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:text-blue-800"
+                                  >
+                                    <Link2 className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </div>
+                              {project.role && (
+                                <div className="text-xs text-gray-600">
+                                  {project.role}{" "}
+                                  {project.duration && `• ${project.duration}`}
+                                </div>
+                              )}
+                              {project.technologies?.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {project.technologies.map(
+                                    (tech: string, j: number) => (
+                                      <span
+                                        key={j}
+                                        className="px-1.5 py-0.5 bg-cyan-50 text-cyan-700 rounded text-[10px]"
+                                      >
+                                        {tech}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              )}
+                              {project.description && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {project.description}
+                                </p>
+                              )}
+                              {project.achievements?.length > 0 && (
+                                <ul className="mt-1 text-xs text-gray-500 list-disc list-inside">
+                                  {project.achievements
+                                    .slice(0, 3)
+                                    .map((a: string, j: number) => (
+                                      <li key={j}>{a}</li>
+                                    ))}
+                                </ul>
                               )}
                             </div>
-                            {project.role && (
-                              <div className="text-xs text-gray-600">{project.role} {project.duration && `• ${project.duration}`}</div>
-                            )}
-                            {project.technologies?.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {project.technologies.map((tech: string, j: number) => (
-                                  <span key={j} className="px-1.5 py-0.5 bg-cyan-50 text-cyan-700 rounded text-[10px]">
-                                    {tech}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
-                            {project.description && (
-                              <p className="text-xs text-gray-500 mt-1">{project.description}</p>
-                            )}
-                            {project.achievements?.length > 0 && (
-                              <ul className="mt-1 text-xs text-gray-500 list-disc list-inside">
-                                {project.achievements.slice(0, 3).map((a: string, j: number) => (
-                                  <li key={j}>{a}</li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        ))}
+                          )
+                        )}
                       </div>
                     </div>
                   )}
@@ -599,7 +720,9 @@ export default function RecruiterDashboard() {
                       {hrNote ? (
                         <p className="whitespace-pre-wrap">{hrNote}</p>
                       ) : (
-                        <p className="text-gray-400 italic">Chưa có ghi chú. Nhấn "Chỉnh sửa" để thêm.</p>
+                        <p className="text-gray-400 italic">
+                          Chưa có ghi chú. Nhấn "Chỉnh sửa" để thêm.
+                        </p>
                       )}
                     </div>
                   )}
@@ -612,4 +735,3 @@ export default function RecruiterDashboard() {
     </div>
   );
 }
-
