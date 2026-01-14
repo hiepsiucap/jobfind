@@ -109,7 +109,13 @@ export default function CVEvaluations({ evaluations, resumeId, accessToken, onEd
   };
 
   const getEditStatus = (edit: ResumeCVEdit) => {
-    return localEdits[edit.id] || edit.status;
+    // Check local state first, then original status
+    // Empty string or undefined means "pending" (not decided yet)
+    const status = localEdits[edit.id] || edit.status;
+    if (!status || status === '') {
+      return 'pending';
+    }
+    return status;
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -166,6 +172,18 @@ export default function CVEvaluations({ evaluations, resumeId, accessToken, onEd
           {/* Expanded Content */}
           {expandedIndex === index && (
             <div className="p-4 space-y-4">
+              {/* Job Info - Only show for manual evaluations */}
+              {evaluation.type === 'manual' && evaluation.jobTitle && (
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-3 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Briefcase className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-semibold text-blue-900">So sánh với công việc:</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">{evaluation.jobTitle}</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Đánh giá thủ công • {new Date(evaluation.evaluatedAt).toLocaleDateString('vi-VN')}</p>
+                </div>
+              )}
+
               {/* Score Breakdown */}
               {evaluation.scoreBreakdown && (
                 <div className="bg-gray-50 rounded-lg p-3 space-y-2">

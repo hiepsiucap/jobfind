@@ -140,7 +140,7 @@ export interface ResumeCVEdit {
   reason: string;
   priority: string;
   impactScore: number;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: '' | 'pending' | 'accepted' | 'rejected'; // Empty string means not decided yet
 }
 
 export interface ResumeEvaluation {
@@ -154,6 +154,9 @@ export interface ResumeEvaluation {
   cvEdits: ResumeCVEdit[];
   jobsAnalyzed: number;
   evaluatedAt: string;
+  type?: 'auto' | 'manual'; // Type of evaluation
+  jobId?: string; // Job ID if manual evaluation
+  jobTitle?: string; // Job title + company name for display
 }
 
 export interface ResumeDetail {
@@ -175,6 +178,7 @@ export interface BackendEducation {
   degree: string;
   institution: string;
   graduationYear: string;
+  gpa?: string;
   description?: string;
 }
 

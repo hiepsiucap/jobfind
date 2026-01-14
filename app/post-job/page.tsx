@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Briefcase, 
   Building2, 
@@ -16,12 +16,17 @@ import {
   Building,
   Globe
 } from 'lucide-react';
-import { createJob, fetchCompanies, Company } from '@/lib/api';
+import { createJob, updateJob, fetchCompanies, fetchBackendJobById, Company } from '@/lib/api';
 import { toast } from 'sonner';
 
 export default function PostJobPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editJobId = searchParams?.get('edit');
+  const isEditMode = !!editJobId;
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingJob, setIsLoadingJob] = useState(isEditMode);
   const [error, setError] = useState<string | null>(null);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
@@ -58,6 +63,55 @@ export default function PostJobPage() {
     loadCompanies();
   }, []);
 
+  // Load job data when in edit mode
+  useEffect(() => {
+    async function loadJob() {
+      if (!editJobId) return;
+      
+      setIsLoadingJob(true);
+      try {
+        const job = await fetchBackendJobById(editJobId);
+        if (job) {
+          // Parse location to extract work mode
+          let workMode = 'ONSITE';
+          let location = job.location;
+          if (job.location?.includes('(Remote)')) {
+            workMode = 'REMOTE';
+            location = job.location.replace('(Remote)', '').trim();
+          } else if (job.location?.includes('(Hybrid)')) {
+            workMode = 'HYBRID';
+            location = job.location.replace('(Hybrid)', '').trim();
+          }
+          
+          setFormData({
+            companyId: job.companyId || '',
+            title: job.title || '',
+            location: location || '',
+            workMode,
+            jobType: job.jobType || 'FULL_TIME',
+            level: job.level || 'MID',
+            salaryMin: job.salaryMin ? job.salaryMin.toString() : '',
+            salaryMax: job.salaryMax ? job.salaryMax.toString() : '',
+            salaryCurrency: job.salaryCurrency || 'VND',
+            experienceRequirement: job.experienceRequirement || '',
+            description: job.description || '',
+            responsibilities: job.responsibilities || '',
+            requirements: job.requirements || '',
+            benefits: job.benefits || '',
+            jobTech: (job.jobTech || []).join(', '),
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load job:', err);
+        toast.error('Không thể tải thông tin tin tuyển dụng');
+        router.push('/post-job');
+      } finally {
+        setIsLoadingJob(false);
+      }
+    }
+    loadJob();
+  }, [editJobId, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -84,29 +138,40 @@ export default function PostJobPage() {
         locationString = formData.location ? `${formData.location} (Hybrid)` : 'Hybrid';
       }
 
-      const jobData = {
-        companyId: formData.companyId,
+      const jobData: any = {
         title: formData.title,
         level: formData.level,
         jobType: formData.jobType,
-        salaryMin: formData.salaryMin ? parseFloat(formData.salaryMin) : undefined,
-        salaryMax: formData.salaryMax ? parseFloat(formData.salaryMax) : undefined,
-        salaryCurrency: formData.salaryCurrency,
         location: locationString,
-        experienceRequirement: formData.experienceRequirement || undefined,
         description: formData.description,
-        responsibilities: formData.responsibilities || undefined,
-        requirements: formData.requirements || undefined,
-        benefits: formData.benefits || undefined,
-        jobTech: jobTech.length > 0 ? jobTech : undefined,
-        active: true, // Mặc định job được kích hoạt
+        jobTech: jobTech,
+        active: true,
       };
 
-      await createJob(jobData, token);
-      toast.success('Đăng tin thành công!');
-      router.push('/jobs');
+      // Add optional fields only if they have values
+      if (formData.companyId) jobData.companyId = formData.companyId;
+      if (formData.salaryMin) jobData.salaryMin = parseFloat(formData.salaryMin);
+      if (formData.salaryMax) jobData.salaryMax = parseFloat(formData.salaryMax);
+      if (formData.salaryCurrency) jobData.salaryCurrency = formData.salaryCurrency;
+      if (formData.experienceRequirement) jobData.experienceRequirement = formData.experienceRequirement;
+      if (formData.responsibilities) jobData.responsibilities = formData.responsibilities;
+      if (formData.requirements) jobData.requirements = formData.requirements;
+      if (formData.benefits) jobData.benefits = formData.benefits;
+
+      if (isEditMode && editJobId) {
+        console.log('[PostJob] Updating job:', editJobId, jobData);
+        const result = await updateJob(editJobId, jobData, token);
+        console.log('[PostJob] Update result:', result);
+        toast.success('Cập nhật tin thành công!');
+        router.push('/recruiter');
+      } else {
+        console.log('[PostJob] Creating job:', jobData);
+        await createJob(jobData, token);
+        toast.success('Đăng tin thành công!');
+        router.push('/jobs');
+      }
     } catch (err) {
-      console.error('Error posting job:', err);
+      console.error('[PostJob] Error:', err);
       const errorMsg = err instanceof Error ? err.message : 'Không thể đăng tin';
       setError(errorMsg);
       toast.error(errorMsg);
@@ -122,6 +187,17 @@ export default function PostJobPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  if (isLoadingJob) {
+    return (
+      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-2" />
+          <p className="text-sm text-gray-500">Đang tải thông tin...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50/20 to-slate-50 min-h-[calc(100vh-64px)]">
       <div className="max-w-5xl mx-auto px-4 py-6">
@@ -131,7 +207,9 @@ export default function PostJobPage() {
             <Briefcase className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Đăng Tin Tuyển Dụng</h1>
+            <h1 className="text-xl font-bold text-gray-900">
+              {isEditMode ? 'Cập Nhật Tin Tuyển Dụng' : 'Đăng Tin Tuyển Dụng'}
+            </h1>
             <p className="text-sm text-gray-500">Tìm ứng viên phù hợp cho công ty</p>
           </div>
         </div>
@@ -443,7 +521,7 @@ export default function PostJobPage() {
                 </>
               ) : (
                 <>
-                  <span>Đăng tin</span>
+                  <span>{isEditMode ? 'Cập nhật' : 'Đăng tin'}</span>
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}

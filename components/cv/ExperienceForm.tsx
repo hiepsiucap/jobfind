@@ -1,19 +1,46 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Loader2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import DatePicker from 'react-datepicker';
+import { vi } from 'date-fns/locale';
+import 'react-datepicker/dist/react-datepicker.css';
 import { generateCVDescription } from '@/lib/api';
 import { CompareDescriptionModal } from '@/components/ui/CompareDescriptionModal';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ResumeDetailType = Parameters<typeof generateCVDescription>[0];
 
+// Helper functions for date parsing/formatting
+const parseMonthYear = (str: string): Date | null => {
+  if (!str || str === 'Hiện tại') return null;
+  // Handle MM/YYYY format
+  const match = str.match(/^(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    return new Date(parseInt(match[2]), parseInt(match[1]) - 1, 1);
+  }
+  // Handle just year format
+  const yearMatch = str.match(/^(\d{4})$/);
+  if (yearMatch) {
+    return new Date(parseInt(yearMatch[1]), 0, 1);
+  }
+  return null;
+};
+
+const formatMonthYear = (date: Date): string => {
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}/${year}`;
+};
+
 export interface ExperienceItem {
   id: string;
   title: string;
   company: string;
   duration: string;
+  startDate?: string; // MM/YYYY format
+  endDate?: string; // MM/YYYY format or "present"
   responsibilities: string;
   achievements: string;
 }
@@ -168,13 +195,51 @@ const ExperienceForm = ({
                 />
               </div>
 
-              <input
-                type="text"
-                value={exp.duration}
-                onChange={(e) => onChange(exp.id, 'duration', e.target.value)}
-                placeholder="Thời gian (vd: 2020 - 2023)"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 outline-none bg-white"
-              />
+              {/* Date Range Picker */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="relative">
+                  <DatePicker
+                    selected={exp.startDate ? parseMonthYear(exp.startDate) : null}
+                    onChange={(date) => {
+                      const formatted = date ? formatMonthYear(date) : '';
+                      onChange(exp.id, 'startDate' as keyof ExperienceItem, formatted);
+                      // Also update duration string for backward compatibility
+                      const endStr = exp.endDate || 'Hiện tại';
+                      onChange(exp.id, 'duration', `${formatted} - ${endStr}`);
+                    }}
+                    dateFormat="MM/yyyy"
+                    showMonthYearPicker
+                    locale={vi}
+                    placeholderText="Bắt đầu"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 outline-none bg-white pl-9"
+                  />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
+                <div className="relative">
+                  <DatePicker
+                    selected={exp.endDate && exp.endDate !== 'Hiện tại' ? parseMonthYear(exp.endDate) : null}
+                    onChange={(date) => {
+                      const formatted = date ? formatMonthYear(date) : 'Hiện tại';
+                      onChange(exp.id, 'endDate' as keyof ExperienceItem, formatted);
+                      // Also update duration string
+                      const startStr = exp.startDate || '';
+                      onChange(exp.id, 'duration', `${startStr} - ${formatted}`);
+                    }}
+                    dateFormat="MM/yyyy"
+                    showMonthYearPicker
+                    locale={vi}
+                    placeholderText="Kết thúc"
+                    isClearable
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-100 outline-none bg-white pl-9"
+                  />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  {(!exp.endDate || exp.endDate === 'Hiện tại') && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-green-600 font-medium">
+                      Hiện tại
+                    </span>
+                  )}
+                </div>
+              </div>
 
               <textarea
                 value={exp.responsibilities}

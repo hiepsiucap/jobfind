@@ -45,13 +45,15 @@ import type {
   CVListItem,
 } from "@/components/cv";
 
-import { API_BASE_URL } from "@/lib/api";
+import { API_BASE_URL, updateCVEditStatus, evaluateWithJD } from "@/lib/api";
+import SelectJobModal from "@/components/cv/SelectJobModal";
 
 // Backend resume format
 interface BackendEducation {
   degree: string;
   institution: string;
   graduation_year: string;
+  gpa?: string;
   description?: string;
 }
 
@@ -92,7 +94,7 @@ interface ResumeCVEdit {
   reason: string;
   priority: string;
   impactScore: number;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: '' | 'pending' | 'accepted' | 'rejected'; // Empty string means not decided yet
 }
 
 interface ResumeEvaluation {
@@ -279,6 +281,14 @@ export default function CVPage() {
   const [formData, setFormData] = useState<ResumeFormData>(emptyFormData);
   const [saveError, setSaveError] = useState<string | null>(null);
   
+  // Track applied CV edit suggestions locally
+  const [appliedEditIds, setAppliedEditIds] = useState<Set<string>>(new Set());
+  
+  // CV Evaluation states
+  const [showJobSelectModal, setShowJobSelectModal] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [applyingEditId, setApplyingEditId] = useState<string | null>(null);
+  
   // PDF export
   const cvPreviewRef = useRef<HTMLDivElement>(null);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -329,6 +339,7 @@ export default function CVPage() {
               degree: edu.degree || "",
               institution: edu.institution || "",
               graduation_year: edu.graduation_year || "",
+              gpa: edu.gpa || "",
               description: edu.description || "",
             }))
           : [createEmptyEducation()],
@@ -367,6 +378,7 @@ export default function CVPage() {
           degree: edu.degree,
           institution: edu.institution,
           graduation_year: edu.graduation_year,
+          gpa: edu.gpa,
           description: edu.description,
         })),
       experience: form.experiences
@@ -519,6 +531,7 @@ export default function CVPage() {
           degree: edu.degree,
           institution: edu.institution,
           graduation_year: edu.graduation_year,
+          gpa: edu.gpa,
           description: edu.description,
         })),
       experience: formData.experiences
@@ -590,6 +603,209 @@ export default function CVPage() {
     setIsEditing(false);
     setActiveTab("view");
     setSaveError(null);
+  };
+
+  // Handle CV evaluation with selected job
+  const handleEvaluateWithJob = async (jobId: string, jobTitle: string) => {
+    if (!selectedResume || !accessToken) {
+      toast.error('Vui lòng đăng nhập và chọn CV');
+      return;
+    }
+
+    setIsEvaluating(true);
+    setShowJobSelectModal(false);
+
+    try {
+      console.log('[CVPage] Evaluating CV with job:', { resumeId: selectedResume.id, jobId, jobTitle });
+      
+      const result = await evaluateWithJD(selectedResume.id, jobId, accessToken);
+      
+      if (result.evaluation) {
+        // Convert backend evaluation to frontend format
+        const newEvaluation = {
+          cvName: result.evaluation.cv_name || selectedResume.resumeDetail.name,
+          overallScore: result.evaluation.overall_score || 0,
+          grade: result.evaluation.grade || 'N/A',
+          scoreBreakdown: {
+            skillsScore: result.evaluation.score_breakdown?.skills_score || 0,
+            experienceScore: result.evaluation.score_breakdown?.experience_score || 0,
+            educationScore: result.evaluation.score_breakdown?.education_score || 0,
+            completenessScore: result.evaluation.score_breakdown?.completeness_score || 0,
+            jobAlignmentScore: result.evaluation.score_breakdown?.job_alignment_score || 0,
+            presentationScore: result.evaluation.score_breakdown?.presentation_score || 0,
+          },
+          strengths: result.evaluation.strengths || [],
+          weaknesses: result.evaluation.weaknesses || [],
+          recommendations: result.evaluation.recommendations || [],
+          cvEdits: (result.evaluation.cv_edits || []).map((edit: any) => ({
+            id: edit.id,
+            fieldPath: edit.field_path,
+            action: edit.action,
+            currentValue: edit.current_value,
+            suggestedValue: edit.suggested_value,
+            reason: edit.reason,
+            priority: edit.priority,
+            impactScore: edit.impact_score,
+            status: edit.status || '',
+          })),
+          jobsAnalyzed: result.evaluation.jobs_analyzed || 1,
+          evaluatedAt: result.evaluation.evaluated_at || new Date().toISOString(),
+          type: result.evaluation.type || 'manual',
+          jobId: result.evaluation.job_id || jobId,
+          jobTitle: result.evaluation.job_title || jobTitle,
+        };
+
+        // Update selectedResume with new evaluation
+        setSelectedResume(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            resumeDetail: {
+              ...prev.resumeDetail,
+              evaluations: [newEvaluation, ...(prev.resumeDetail.evaluations || [])],
+            },
+          };
+        });
+
+        // Also update in allResumes list
+        setAllResumes(prev => prev.map(r =>
+          r.id === selectedResume.id
+            ? {
+                ...r,
+                resumeDetail: {
+                  ...r.resumeDetail,
+                  evaluations: [newEvaluation, ...(r.resumeDetail.evaluations || [])],
+                },
+              }
+            : r
+        ));
+
+        toast.success('Đánh giá CV theo công việc thành công!');
+      } else {
+        throw new Error('Invalid evaluation response');
+      }
+    } catch (err) {
+      console.error('[CVPage] Evaluate failed:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Không thể đánh giá CV';
+      toast.error(errorMsg);
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  // Apply CV edit suggestion to form data
+  const applyEditSuggestion = async (edit: ResumeCVEdit) => {
+    const { fieldPath, suggestedValue } = edit;
+    
+    // First, make sure we're in edit mode with the current resume
+    if (!selectedResume || !accessToken) return;
+    
+    setApplyingEditId(edit.id);
+    
+    try {
+      // Call API to update status to 'accepted'
+      await updateCVEditStatus(selectedResume.id, edit.id, 'accepted', accessToken);
+      
+      // Update local state to mark as applied
+      setAppliedEditIds(prev => new Set([...prev, edit.id]));
+      
+      // Load form data from current resume if not already editing
+      const currentFormData = isEditing ? formData : resumeToFormData(selectedResume);
+      
+      // Parse fieldPath and apply the change
+      const updatedFormData = { ...currentFormData };
+      
+      // Handle simple fields
+      if (fieldPath === 'summary') {
+        updatedFormData.summary = suggestedValue;
+      } else if (fieldPath === 'skills') {
+        const existingSkills = updatedFormData.skills.split(',').map(s => s.trim()).filter(Boolean);
+        const newSkills = suggestedValue.split(',').map(s => s.trim()).filter(Boolean);
+        const merged = [...new Set([...existingSkills, ...newSkills])];
+        updatedFormData.skills = merged.join(', ');
+      } else if (fieldPath === 'name') {
+        updatedFormData.name = suggestedValue;
+      } else if (fieldPath === 'email') {
+        updatedFormData.email = suggestedValue;
+      } else if (fieldPath === 'phone') {
+        updatedFormData.phone = suggestedValue;
+      } else if (fieldPath === 'certifications') {
+        const existing = updatedFormData.certifications.split('\n').map(s => s.trim()).filter(Boolean);
+        if (!existing.includes(suggestedValue)) {
+          existing.push(suggestedValue);
+        }
+        updatedFormData.certifications = existing.join('\n');
+      } else if (fieldPath === 'languages') {
+        const existing = updatedFormData.languages.split(',').map(s => s.trim()).filter(Boolean);
+        const newLangs = suggestedValue.split(',').map(s => s.trim()).filter(Boolean);
+        const merged = [...new Set([...existing, ...newLangs])];
+        updatedFormData.languages = merged.join(', ');
+      }
+      // Handle experience array paths
+      else if (fieldPath.startsWith('experience')) {
+        const match = fieldPath.match(/experience\[(\d+)\]\.(\w+)/);
+        if (match) {
+          const index = parseInt(match[1]);
+          const field = match[2] as keyof ExperienceItem;
+          if (updatedFormData.experiences[index]) {
+            (updatedFormData.experiences[index] as Record<string, string>)[field] = suggestedValue;
+          }
+        } else if (fieldPath === 'experience') {
+          try {
+            const newExp = JSON.parse(suggestedValue);
+            updatedFormData.experiences.push({
+              id: `exp_new_${Date.now()}`,
+              title: newExp.title || '',
+              company: newExp.company || '',
+              duration: newExp.duration || '',
+              responsibilities: Array.isArray(newExp.responsibilities) ? newExp.responsibilities.join('\n') : (newExp.responsibilities || ''),
+              achievements: Array.isArray(newExp.achievements) ? newExp.achievements.join('\n') : (newExp.achievements || ''),
+            });
+          } catch {
+            if (updatedFormData.experiences[0]) {
+              const current = updatedFormData.experiences[0].achievements;
+              updatedFormData.experiences[0].achievements = current ? `${current}\n${suggestedValue}` : suggestedValue;
+            }
+          }
+        }
+      }
+      // Handle education array paths
+      else if (fieldPath.startsWith('education')) {
+        const match = fieldPath.match(/education\[(\d+)\]\.(\w+)/);
+        if (match) {
+          const index = parseInt(match[1]);
+          const field = match[2] as keyof EducationItem;
+          if (updatedFormData.educations[index]) {
+            (updatedFormData.educations[index] as Record<string, string>)[field] = suggestedValue;
+          }
+        }
+      }
+      // Handle project array paths
+      else if (fieldPath.startsWith('project')) {
+        const match = fieldPath.match(/projects?\[(\d+)\]\.(\w+)/);
+        if (match) {
+          const index = parseInt(match[1]);
+          const field = match[2] as keyof ProjectItem;
+          if (updatedFormData.projects[index]) {
+            (updatedFormData.projects[index] as Record<string, string>)[field] = suggestedValue;
+          }
+        }
+      }
+      
+      // Set form data and switch to edit mode
+      setFormData(updatedFormData);
+      setSelectedResume(selectedResume);
+      setIsEditing(true);
+      setActiveTab("generate");
+      setSaveError(null);
+      
+      toast.success(`Đã áp dụng gợi ý vào "${fieldPath}". Nhấn "Cập nhật CV" để lưu.`);
+    } catch (err) {
+      console.error('Failed to apply edit:', err);
+      toast.error('Không thể áp dụng gợi ý. Vui lòng thử lại.');
+    } finally {
+      setApplyingEditId(null);
+    }
   };
 
   // Delete CV - open confirmation modal
@@ -887,79 +1103,147 @@ export default function CVPage() {
           <div className="p-4 h-full">
             {/* View Tab */}
             {activeTab === "view" && (
-              <div className="h-full flex gap-4">
-                {/* CV List Panel */}
-                <div className="w-80 flex-shrink-0 overflow-y-auto">
-                  <div className="flex items-center justify-between mb-3">
-                    <h1 className="text-lg font-bold text-gray-900">
-                      Danh sách CV
+              <div className="h-full flex gap-3">
+                {/* CV List Panel - Compact */}
+                <div className="w-56 flex-shrink-0 overflow-y-auto bg-white rounded-xl border border-gray-200 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h1 className="text-sm font-bold text-gray-900">
+                      CV của tôi
                     </h1>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1">
                       <button
                         onClick={fetchAllCVs}
                         disabled={isLoadingCVs}
-                        className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50"
+                        className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-all disabled:opacity-50"
                         title="Làm mới"
                       >
                         <RefreshCw
-                          className={`h-4 w-4 ${
+                          className={`h-3.5 w-3.5 ${
                             isLoadingCVs ? "animate-spin" : ""
                           }`}
                         />
                       </button>
-                      <Button
-                        variant="primary"
-                        size="sm"
+                      <button
                         onClick={handleStartCreate}
-                        leftIcon={<Plus className="h-3.5 w-3.5" />}
+                        className="p-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-all"
+                        title="Tạo mới"
                       >
-                        Tạo mới
-                      </Button>
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
                     </div>
                   </div>
 
                   {isLoadingCVs ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                     </div>
                   ) : !isAuthenticated ? (
-                    <div className="text-center py-12 bg-white rounded-xl border border-gray-200 p-6">
-                      <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 text-sm mb-4">
-                        Vui lòng đăng nhập để xem CV của bạn
+                    <div className="text-center py-6">
+                      <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500 text-xs mb-2">
+                        Đăng nhập để xem CV
                       </p>
                       <a
                         href="/login"
-                        className="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-sm font-medium"
+                        className="inline-block px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-xs font-medium"
                       >
                         Đăng nhập
                       </a>
                     </div>
                   ) : (
-                    <CVList
-                      cvs={cvListItems}
-                      selectedId={selectedResume?.id}
-                      onSelect={handleSelectCV}
-                      onEdit={handleStartEdit}
-                      onDelete={handleDeleteCV}
-                      isDeleting={isDeleting}
-                    />
+                    <div className="space-y-1.5">
+                      {cvListItems.length === 0 ? (
+                        <div className="text-center py-6">
+                          <FileText className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                          <p className="text-gray-500 text-xs">Chưa có CV</p>
+                        </div>
+                      ) : (
+                        cvListItems.map((cv) => (
+                          <div
+                            key={cv.id}
+                            onClick={() => handleSelectCV(cv)}
+                            className={`p-2 rounded-lg cursor-pointer transition-all group ${
+                              selectedResume?.id === cv.id
+                                ? "bg-blue-50 border border-blue-200"
+                                : "hover:bg-gray-50 border border-transparent"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className={`h-4 w-4 flex-shrink-0 ${
+                                selectedResume?.id === cv.id ? "text-blue-600" : "text-gray-400"
+                              }`} />
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-xs font-medium truncate ${
+                                  selectedResume?.id === cv.id ? "text-blue-900" : "text-gray-700"
+                                }`}>
+                                  {cv.resumeDetail?.name || "Chưa có tên"}
+                                </p>
+                                <p className="text-[10px] text-gray-400">
+                                  v{cv.version}
+                                </p>
+                              </div>
+                              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEdit(cv);
+                                  }}
+                                  className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                  title="Sửa"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteCV(cv);
+                                  }}
+                                  className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                  title="Xóa"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   )}
                 </div>
 
+                {/* Main Content - CV Preview and Evaluations side by side */}
+                <div className="flex-1 min-w-0 flex gap-3">
                 {/* CV Preview Panel */}
                 <div className="flex-1 min-w-0 flex flex-col">
-                  <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-lg font-bold text-gray-900">
+                    <div className="flex justify-between items-center mb-2">
+                      <h2 className="text-sm font-bold text-gray-900">
                       {selectedCV.personalInfo.fullName || "Xem trước CV"}
                     </h2>
                     {selectedResume && (
-                      <div className="flex gap-2">
+                        <div className="flex gap-1.5">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setShowJobSelectModal(true)}
+                            disabled={isEvaluating}
+                            leftIcon={
+                              isEvaluating ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <span className="text-xs">🎯</span>
+                              )
+                            }
+                            className="text-xs px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 border-0"
+                          >
+                            {isEvaluating ? "..." : "Đánh giá"}
+                          </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleStartEdit()}
-                          leftIcon={<Edit className="h-3.5 w-3.5" />}
+                            leftIcon={<Edit className="h-3 w-3" />}
+                            className="text-xs px-2 py-1"
                         >
                           Sửa
                         </Button>
@@ -970,13 +1254,14 @@ export default function CVPage() {
                           disabled={isExportingPdf}
                           leftIcon={
                             isExportingPdf ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
-                              <Download className="h-3.5 w-3.5" />
+                                <Download className="h-3 w-3" />
                             )
                           }
+                            className="text-xs px-2 py-1"
                         >
-                          {isExportingPdf ? "Đang xuất..." : "Tải PDF"}
+                            {isExportingPdf ? "..." : "PDF"}
                         </Button>
                       </div>
                     )}
@@ -984,36 +1269,20 @@ export default function CVPage() {
 
                   <div className="flex-1 min-h-0 overflow-auto">
                     {selectedCV.personalInfo.fullName ? (
-                      <div className="space-y-4">
                         <CVPreview cv={selectedCV} />
-                        
-                        {/* Show Evaluations if available */}
-                        {selectedResume?.resumeDetail?.evaluations && 
-                         selectedResume.resumeDetail.evaluations.length > 0 && (
-                          <CVEvaluations
-                            evaluations={selectedResume.resumeDetail.evaluations}
-                            resumeId={selectedResume.id}
-                            accessToken={accessToken || undefined}
-                            onEditAccepted={(edit) => {
-                              // Optionally update form data when an edit is accepted
-                              toast.success(`Đã áp dụng: ${edit.suggestedValue}`);
-                            }}
-                          />
-                        )}
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center h-full flex items-center justify-center">
+                      ) : (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center h-full flex items-center justify-center">
                         <div>
-                          <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            <FileText className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                            <h3 className="text-sm font-semibold text-gray-900 mb-1">
                             {allResumes.length > 0
                               ? "Chọn CV để xem"
                               : "Chưa có CV nào"}
                           </h3>
-                          <p className="text-gray-500 text-sm mb-4">
+                            <p className="text-gray-500 text-xs mb-3">
                             {allResumes.length > 0
-                              ? "Chọn một CV từ danh sách bên trái để xem chi tiết"
-                              : "Tạo CV mới hoặc upload CV có sẵn để bắt đầu"}
+                                ? "Chọn một CV từ danh sách bên trái"
+                                : "Tạo CV mới hoặc upload CV"}
                           </p>
                           {allResumes.length === 0 && isAuthenticated && (
                             <div className="flex justify-center gap-2">
@@ -1021,15 +1290,17 @@ export default function CVPage() {
                                 variant="primary"
                                 size="sm"
                                 onClick={handleStartCreate}
+                                  className="text-xs"
                               >
-                                Tạo CV mới
+                                  Tạo CV
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setActiveTab("upload")}
+                                  className="text-xs"
                               >
-                                Upload CV
+                                  Upload
                               </Button>
                             </div>
                           )}
@@ -1037,6 +1308,30 @@ export default function CVPage() {
                       </div>
                     )}
                   </div>
+                  </div>
+
+                  {/* CV Evaluations Panel - Side by side */}
+                  {selectedResume?.resumeDetail?.evaluations && 
+                   selectedResume.resumeDetail.evaluations.length > 0 && (
+                    <div className="w-96 flex-shrink-0 flex flex-col">
+                      <h2 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-1.5">
+                        <span className="w-5 h-5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center">
+                          <span className="text-white text-[10px]">★</span>
+                        </span>
+                        Đánh giá CV
+                      </h2>
+                      <div className="flex-1 min-h-0 overflow-auto">
+                        <CVEvaluations
+                          evaluations={selectedResume.resumeDetail.evaluations}
+                          resumeId={selectedResume.id}
+                          accessToken={accessToken || undefined}
+                          onEditAccepted={(edit) => {
+                            applyEditSuggestion(edit);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1227,9 +1522,96 @@ export default function CVPage() {
                     </div>
                   </div>
 
-                  {/* Right: CV Suggestions */}
-                  <div className="w-80 flex-shrink-0 overflow-y-auto">
-                    <div className="sticky top-0">
+                  {/* Right: CV Evaluations + Suggestions */}
+                  <div className="w-96 flex-shrink-0 overflow-y-auto space-y-4">
+                    {/* CV Edit Suggestions from Evaluation (only when editing existing CV) */}
+                    {isEditing && selectedResume?.resumeDetail?.evaluations && 
+                     selectedResume.resumeDetail.evaluations.length > 0 && (
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+                        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                            <span className="text-white text-[10px]">✨</span>
+                          </span>
+                          Gợi ý cải thiện CV
+                        </h3>
+                        {selectedResume.resumeDetail.evaluations.map((evaluation, evalIdx) => (
+                          <div key={evalIdx} className="space-y-2">
+                            {evaluation.cvEdits && evaluation.cvEdits.length > 0 ? (
+                              evaluation.cvEdits.map((edit) => {
+                                const isApplied = edit.status === 'accepted' || appliedEditIds.has(edit.id);
+                                const isRejected = edit.status === 'rejected';
+                                const isPending = !isApplied && !isRejected && (!edit.status || edit.status === '' || edit.status === 'pending');
+                                const isApplying = applyingEditId === edit.id;
+                                
+                                return (
+                                  <div
+                                    key={edit.id}
+                                    className={`p-2.5 rounded-lg border text-sm ${
+                                      isApplied ? 'bg-green-50 border-green-200' :
+                                      isRejected ? 'bg-gray-50 border-gray-200 opacity-50' :
+                                      'bg-purple-50 border-purple-200'
+                                    }`}
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 mb-1">
+                                          <span className="text-[10px] font-medium text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">
+                                            {edit.fieldPath}
+                                          </span>
+                                          {edit.priority === 'high' && (
+                                            <span className="text-[10px] text-red-600">⚡ Quan trọng</span>
+                                          )}
+                                        </div>
+                                        {edit.currentValue && (
+                                          <p className="text-[11px] text-gray-400 line-through mb-0.5 truncate">
+                                            {edit.currentValue}
+                                          </p>
+                                        )}
+                                        <p className="text-xs text-gray-800 font-medium line-clamp-2">
+                                          {edit.suggestedValue}
+                                        </p>
+                                        {edit.reason && (
+                                          <p className="text-[10px] text-gray-500 mt-1 italic line-clamp-2">
+                                            💡 {edit.reason}
+                                          </p>
+                                        )}
+                                      </div>
+                                      
+                                      {isPending && (
+                                        <button
+                                          type="button"
+                                          onClick={() => applyEditSuggestion(edit)}
+                                          disabled={isApplying}
+                                          className="flex-shrink-0 px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-medium rounded transition-colors disabled:opacity-50"
+                                        >
+                                          {isApplying ? (
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                          ) : (
+                                            'Áp dụng'
+                                          )}
+                                        </button>
+                                      )}
+                                      {isApplied && (
+                                        <span className="text-[10px] text-green-600 font-medium">✓ Đã áp dụng</span>
+                                      )}
+                                      {isRejected && (
+                                        <span className="text-[10px] text-gray-400">Bỏ qua</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <p className="text-xs text-gray-500 text-center py-2">
+                                Không có gợi ý sửa đổi
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Skill Suggestions */}
                       <CVSuggestions
                         currentSkills={currentSkillsArray}
                         currentExperience={currentExperienceArray}
@@ -1237,7 +1619,6 @@ export default function CVPage() {
                         onAddSkill={handleAddSuggestedSkill}
                         accessToken={accessToken || undefined}
                       />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1245,6 +1626,14 @@ export default function CVPage() {
           </div>
         </div>
       </div>
+
+      {/* Select Job Modal for Evaluation */}
+      <SelectJobModal
+        isOpen={showJobSelectModal}
+        onClose={() => setShowJobSelectModal(false)}
+        onSelect={handleEvaluateWithJob}
+        accessToken={accessToken || undefined}
+      />
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

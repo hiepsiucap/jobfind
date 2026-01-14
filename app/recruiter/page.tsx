@@ -247,27 +247,39 @@ export default function RecruiterDashboard() {
             ) : (
               <div className="divide-y divide-gray-100">
                 {jobs.map((job) => (
-                  <button
+                  <div
                     key={job.id}
-                    onClick={() => handleSelectJob(job)}
-                    className={`w-full p-3 text-left hover:bg-gray-50 transition-colors ${
+                    className={`relative group ${
                       selectedJob?.id === job.id ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
                     }`}
                   >
-                    <div className="font-medium text-sm text-gray-900 truncate">{job.title}</div>
-                    <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
-                      <span className="flex items-center gap-1">
-                        <Building2 className="h-3 w-3" />
-                        {job.company?.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
-                        <Users className="h-3 w-3" />
-                        {job.applicationCount || 0} ứng viên
-                      </span>
-                    </div>
-                  </button>
+                    <button
+                      onClick={() => handleSelectJob(job)}
+                      className="w-full p-3 text-left hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="font-medium text-sm text-gray-900 truncate pr-8">{job.title}</div>
+                      <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
+                        <span className="flex items-center gap-1">
+                          <Building2 className="h-3 w-3" />
+                          {job.company?.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
+                          <Users className="h-3 w-3" />
+                          {job.applicationCount || 0} ứng viên
+                        </span>
+                      </div>
+                    </button>
+                    <Link
+                      href={`/post-job?edit=${job.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-100 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Chỉnh sửa tin"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </Link>
+                  </div>
                 ))}
               </div>
             )}

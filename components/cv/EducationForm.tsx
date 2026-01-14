@@ -3,8 +3,11 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Trash2, Sparkles, Loader2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import DatePicker from "react-datepicker";
+import { vi } from "date-fns/locale";
+import "react-datepicker/dist/react-datepicker.css";
 import { generateCVDescription } from "@/lib/api";
 import { CompareDescriptionModal } from "@/components/ui/CompareDescriptionModal";
 
@@ -16,6 +19,7 @@ export interface EducationItem {
   degree: string;
   institution: string;
   graduation_year: string;
+  gpa?: string;
   description?: string;
 }
 
@@ -169,7 +173,7 @@ const EducationForm = ({
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-100 outline-none bg-white"
               />
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <input
                   type="text"
                   value={edu.institution}
@@ -179,13 +183,28 @@ const EducationForm = ({
                   placeholder="Trường/Tổ chức"
                   className="col-span-2 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-100 outline-none bg-white"
                 />
+                <div className="relative">
+                  <DatePicker
+                    selected={edu.graduation_year ? new Date(parseInt(edu.graduation_year), 0, 1) : null}
+                    onChange={(date) => {
+                      const year = date ? date.getFullYear().toString() : "";
+                      onChange(edu.id, "graduation_year", year);
+                    }}
+                    showYearPicker
+                    dateFormat="yyyy"
+                    locale={vi}
+                    placeholderText="Năm TN"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-100 outline-none bg-white pl-9"
+                  />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                </div>
                 <input
                   type="text"
-                  value={edu.graduation_year}
+                  value={edu.gpa || ""}
                   onChange={(e) =>
-                    onChange(edu.id, "graduation_year", e.target.value)
+                    onChange(edu.id, "gpa", e.target.value)
                   }
-                  placeholder="Năm TN"
+                  placeholder="GPA"
                   className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-100 outline-none bg-white"
                 />
               </div>
@@ -239,6 +258,7 @@ export const createEmptyEducation = (): EducationItem => ({
   degree: "",
   institution: "",
   graduation_year: "",
+  gpa: "",
   description: "",
 });
 

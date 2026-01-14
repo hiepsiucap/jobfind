@@ -267,8 +267,14 @@ export async function createJob(jobData: {
 // Update a job posting
 export async function updateJob(id: string, jobData: Partial<BackendJob>, token: string): Promise<BackendJob> {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/jobs/${id}`, {
+    console.log('[API] Updating job:', {
+      url: `${API_BASE_URL}/api/v1/jobs/${id}`,
       method: 'PUT',
+      body: jobData
+    });
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/jobs/${id}`, {
+      method: 'PATCH', // Changed from PUT to PATCH
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
@@ -276,13 +282,26 @@ export async function updateJob(id: string, jobData: Partial<BackendJob>, token:
       body: JSON.stringify(jobData),
     });
     
+    console.log('[API] Update response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[API] Update error response:', errorText);
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText };
+      }
+      const errorMsg = errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMsg);
     }
     
-    return await response.json();
+    const result = await response.json();
+    console.log('[API] Update success:', result);
+    return result;
   } catch (error) {
-    console.error('Error updating job:', error);
+    console.error('[API] Error updating job:', error);
     throw error;
   }
 }
@@ -1231,6 +1250,91 @@ export function getWebSocketURL(token: string): string {
   const wsProtocol = API_BASE_URL.startsWith('https') ? 'wss' : 'ws';
   const wsHost = API_BASE_URL.replace(/^https?:\/\//, '');
   return `${wsProtocol}://${wsHost}/ws?token=${token}`;
+}
+
+// ==================== CV Evaluation APIs ====================
+
+/**
+ * Get jobs for evaluation (viewed + saved jobs)
+ */
+export async function getJobsForEvaluation(token: string): Promise<{
+  viewed_jobs: Array<{
+    id: string;
+    title: string;
+    company_name: string;
+    location: string;
+    time_on_sight: number;
+  }>;
+  saved_jobs: Array<{
+    id: string;
+    title: string;
+    company_name: string;
+    location: string;
+    time_on_sight: number;
+  }>;
+}> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/evaluation/jobs`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching jobs for evaluation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Evaluate resume with specific job
+ */
+export async function evaluateWithJD(
+  resumeId: string,
+  jobId: string,
+  token: string
+): Promise<{ evaluation: any }> {
+  try {
+    console.log('[API] Evaluating with JD:', { resumeId, jobId });
+    
+    const response = await fetch(`${API_BASE_URL}/api/v1/evaluation/evaluate-with-jd`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        resume_id: resumeId,
+        job_id: jobId,
+      }),
+    });
+
+    console.log('[API] Evaluate response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[API] Evaluate error:', errorText);
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText };
+      }
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('[API] Evaluate success:', result);
+    return result;
+  } catch (error) {
+    console.error('[API] Error evaluating with JD:', error);
+    throw error;
+  }
 }
 
 // Export API URL for other uses

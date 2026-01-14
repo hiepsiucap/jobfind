@@ -96,13 +96,16 @@ export default function Header() {
   };
 
   const getNotificationLink = (notification: NotificationItem): string => {
-    if (notification.type === 'application_status' && notification.objectId) {
-      return `/jobs/${notification.objectId}`;
-    }
+    // For HR: new applications go to recruiter page
     if (notification.type === 'new_application' && notification.objectId) {
       return '/recruiter';
     }
-    return '/profile';
+    // For job-related notifications with objectId, go to job detail
+    if (notification.type === 'application_status' && notification.objectId) {
+      return `/jobs/${notification.objectId}`;
+    }
+    // All other notifications (including CV/resume related) go to CV page
+    return '/cv';
   };
 
   return (
