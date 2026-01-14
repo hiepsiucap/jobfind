@@ -621,38 +621,41 @@ export default function CVPage() {
       const result = await evaluateWithJD(selectedResume.id, jobId, accessToken);
       
       if (result.evaluation) {
-        // Convert backend evaluation to frontend format
+        // Convert backend evaluation to frontend format (support both camelCase and snake_case)
+        const ev = result.evaluation;
+        const sb = ev.score_breakdown || ev.scoreBreakdown || {};
+        
         const newEvaluation = {
-          cvName: result.evaluation.cv_name || selectedResume.resumeDetail.name,
-          overallScore: result.evaluation.overall_score || 0,
-          grade: result.evaluation.grade || 'N/A',
+          cvName: ev.cv_name || ev.cvName || selectedResume.resumeDetail.name,
+          overallScore: ev.overall_score || ev.overallScore || 0,
+          grade: ev.grade || 'N/A',
           scoreBreakdown: {
-            skillsScore: result.evaluation.score_breakdown?.skills_score || 0,
-            experienceScore: result.evaluation.score_breakdown?.experience_score || 0,
-            educationScore: result.evaluation.score_breakdown?.education_score || 0,
-            completenessScore: result.evaluation.score_breakdown?.completeness_score || 0,
-            jobAlignmentScore: result.evaluation.score_breakdown?.job_alignment_score || 0,
-            presentationScore: result.evaluation.score_breakdown?.presentation_score || 0,
+            skillsScore: sb.skills_score || sb.skillsScore || 0,
+            experienceScore: sb.experience_score || sb.experienceScore || 0,
+            educationScore: sb.education_score || sb.educationScore || 0,
+            completenessScore: sb.completeness_score || sb.completenessScore || 0,
+            jobAlignmentScore: sb.job_alignment_score || sb.jobAlignmentScore || 0,
+            presentationScore: sb.presentation_score || sb.presentationScore || 0,
           },
-          strengths: result.evaluation.strengths || [],
-          weaknesses: result.evaluation.weaknesses || [],
-          recommendations: result.evaluation.recommendations || [],
-          cvEdits: (result.evaluation.cv_edits || []).map((edit: any) => ({
+          strengths: ev.strengths || [],
+          weaknesses: ev.weaknesses || [],
+          recommendations: ev.recommendations || [],
+          cvEdits: (ev.cv_edits || ev.cvEdits || []).map((edit: any) => ({
             id: edit.id,
-            fieldPath: edit.field_path,
+            fieldPath: edit.field_path || edit.fieldPath,
             action: edit.action,
-            currentValue: edit.current_value,
-            suggestedValue: edit.suggested_value,
+            currentValue: edit.current_value || edit.currentValue,
+            suggestedValue: edit.suggested_value || edit.suggestedValue,
             reason: edit.reason,
             priority: edit.priority,
-            impactScore: edit.impact_score,
+            impactScore: edit.impact_score || edit.impactScore,
             status: edit.status || '',
           })),
-          jobsAnalyzed: result.evaluation.jobs_analyzed || 1,
-          evaluatedAt: result.evaluation.evaluated_at || new Date().toISOString(),
-          type: result.evaluation.type || 'manual',
-          jobId: result.evaluation.job_id || jobId,
-          jobTitle: result.evaluation.job_title || jobTitle,
+          jobsAnalyzed: ev.jobs_analyzed || ev.jobsAnalyzed || 1,
+          evaluatedAt: ev.evaluated_at || ev.evaluatedAt || new Date().toISOString(),
+          type: ev.type || 'manual',
+          jobId: ev.job_id || ev.jobId || jobId,
+          jobTitle: ev.job_title || ev.jobTitle || jobTitle,
         };
 
         // Update selectedResume with new evaluation
