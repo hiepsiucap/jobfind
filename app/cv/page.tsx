@@ -1226,7 +1226,7 @@ export default function CVPage() {
                     {selectedResume && (
                         <div className="flex gap-1.5">
                           <Button
-                            variant="secondary"
+                            variant="outline"
                             size="sm"
                             onClick={() => setShowJobSelectModal(true)}
                             disabled={isEvaluating}
@@ -1234,10 +1234,10 @@ export default function CVPage() {
                               isEvaluating ? (
                                 <Loader2 className="h-3 w-3 animate-spin" />
                               ) : (
-                                <span className="text-xs">🎯</span>
+                                <span className="text-xs">⭐</span>
                               )
                             }
-                            className="text-xs px-2 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 border-0"
+                            className="text-xs px-2 py-1"
                           >
                             {isEvaluating ? "..." : "Đánh giá"}
                           </Button>
