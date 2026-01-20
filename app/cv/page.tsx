@@ -1543,7 +1543,7 @@ export default function CVPage() {
                               evaluation.cvEdits.map((edit) => {
                                 const isApplied = edit.status === 'accepted' || appliedEditIds.has(edit.id);
                                 const isRejected = edit.status === 'rejected';
-                                const isPending = !isApplied && !isRejected && (!edit.status || edit.status === '' || edit.status === 'pending');
+                                const isPending = !isApplied && !isRejected && (!edit.status || (edit.status as string) === '' || edit.status === 'pending');
                                 const isApplying = applyingEditId === edit.id;
                                 
                                 return (
