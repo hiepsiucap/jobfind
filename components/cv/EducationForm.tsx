@@ -186,7 +186,7 @@ const EducationForm = ({
                 <div className="relative">
                   <DatePicker
                     selected={edu.graduation_year ? new Date(parseInt(edu.graduation_year), 0, 1) : null}
-                    onChange={(date) => {
+                    onChange={(date: Date | null) => {
                       const year = date ? date.getFullYear().toString() : "";
                       onChange(edu.id, "graduation_year", year);
                     }}

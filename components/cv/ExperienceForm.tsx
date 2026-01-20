@@ -200,7 +200,7 @@ const ExperienceForm = ({
                 <div className="relative">
                   <DatePicker
                     selected={exp.startDate ? parseMonthYear(exp.startDate) : null}
-                    onChange={(date) => {
+                    onChange={(date: Date | null) => {
                       const formatted = date ? formatMonthYear(date) : '';
                       onChange(exp.id, 'startDate' as keyof ExperienceItem, formatted);
                       // Also update duration string for backward compatibility
@@ -218,7 +218,7 @@ const ExperienceForm = ({
                 <div className="relative">
                   <DatePicker
                     selected={exp.endDate && exp.endDate !== 'Hiện tại' ? parseMonthYear(exp.endDate) : null}
-                    onChange={(date) => {
+                    onChange={(date: Date | null) => {
                       const formatted = date ? formatMonthYear(date) : 'Hiện tại';
                       onChange(exp.id, 'endDate' as keyof ExperienceItem, formatted);
                       // Also update duration string
