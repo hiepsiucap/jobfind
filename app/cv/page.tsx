@@ -751,7 +751,7 @@ export default function CVPage() {
           const index = parseInt(match[1]);
           const field = match[2] as keyof ExperienceItem;
           if (updatedFormData.experiences[index]) {
-            (updatedFormData.experiences[index] as Record<string, string>)[field] = suggestedValue;
+            (updatedFormData.experiences[index] as unknown as Record<string, string>)[field] = suggestedValue;
           }
         } else if (fieldPath === 'experience') {
           try {
@@ -779,7 +779,7 @@ export default function CVPage() {
           const index = parseInt(match[1]);
           const field = match[2] as keyof EducationItem;
           if (updatedFormData.educations[index]) {
-            (updatedFormData.educations[index] as Record<string, string>)[field] = suggestedValue;
+            (updatedFormData.educations[index] as unknown as Record<string, string>)[field] = suggestedValue;
           }
         }
       }
@@ -790,7 +790,7 @@ export default function CVPage() {
           const index = parseInt(match[1]);
           const field = match[2] as keyof ProjectItem;
           if (updatedFormData.projects[index]) {
-            (updatedFormData.projects[index] as Record<string, string>)[field] = suggestedValue;
+            (updatedFormData.projects[index] as unknown as Record<string, string>)[field] = suggestedValue;
           }
         }
       }
