@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Briefcase,
@@ -27,7 +27,7 @@ import {
 } from "@/lib/api";
 import { toast } from "sonner";
 
-export default function PostJobPage() {
+function PostJobContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editJobId = searchParams?.get("edit");
@@ -615,5 +615,22 @@ export default function PostJobPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function PostJobPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-2" />
+            <p className="text-sm text-gray-500">Đang tải...</p>
+          </div>
+        </div>
+      }
+    >
+      <PostJobContent />
+    </Suspense>
   );
 }
